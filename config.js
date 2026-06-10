@@ -127,8 +127,16 @@ function buildSentenceBody(profile, chunkOrder) {
   const chunks = {};
   chunks.edu = buildEduChunk(profile);
   SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });
-  const parts = chunkOrder.map(c => chunks[c]).filter(Boolean);
-  const body = parts.length ? parts.join('，') : '資歷不詳';
+  // 依 chunkOrder 取出非空子句，並記住每個子句來自哪個塊
+  const ordered = chunkOrder.map(c => ({ key: c, text: chunks[c] })).filter(o => o.text);
+  if (ordered.length) {
+    // 教職子句「並在大學兼任講師」以承接詞「並」開頭，若排在第一位（緊接姓名）會不通 →
+    // 當教職是首子句時去掉開頭的「並」（使用者 2026-06-11）。
+    if (ordered[0].key === 'teach') {
+      ordered[0].text = ordered[0].text.replace(/^並/, '');
+    }
+  }
+  const body = ordered.length ? ordered.map(o => o.text).join('，') : '資歷不詳';
   return `，${body}。`;   // 前綴逗號接姓名，如「楊宜庭，擁有…，…。」
 }
 
