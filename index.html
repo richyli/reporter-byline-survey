@@ -109,6 +109,7 @@
 </head>
 <body>
 <div class="wrap">
+<div id="errbox" style="display:none;background:#3a1212;border:1px solid #a33;color:#ffd;padding:10px 14px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap"></div>
 
 <!-- 0. 設定（測試用，正式版隱藏） -->
 <section id="screen-config" class="panel">
@@ -202,6 +203,11 @@
 <script>
 const $ = s => document.querySelector(s);
 const show = id => { document.querySelectorAll('section').forEach(s=>s.classList.add('hide')); $(id).classList.remove('hide'); window.scrollTo(0,0); };
+// 把任何未捕捉錯誤直接顯示在畫面上（除錯用，避免「按了沒反應」查不到原因）
+window.addEventListener('error', e=>{
+  const box=document.getElementById('errbox');
+  if(box){ box.style.display='block'; box.textContent='⚠ JS 錯誤：'+e.message+' @ '+(e.filename||'').split('/').pop()+':'+e.lineno; }
+});
 const DEFAULT_ENDPOINT = 'https://api.sheetmonkey.io/form/8utmWimsSuNDoEiVFz8Cyb';   // R Reporter Byline 專屬 form
 window.addEventListener('DOMContentLoaded', ()=>{ if(DEFAULT_ENDPOINT) $('#cfg-endpoint').value = DEFAULT_ENDPOINT; });
 
