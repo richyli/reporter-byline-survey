@@ -40,25 +40,24 @@
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
   .progress{height:5px;background:#1e2630;border-radius:6px;overflow:hidden}
   .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--golddark),var(--gold2));width:0;transition:width .25s}
-  #screen-trial{min-height:calc(100vh - 20px);display:flex}
-  .trial-panel{padding:14px 18px;margin:6px 0;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:10px}
+  /* 對比題畫面：自然高度（不再強撐滿視窗），垂直堆疊 */
+  .trial-panel{padding:14px 18px;margin:8px 0;display:flex;flex-direction:column;gap:10px}
   .trial-head{flex:0 0 auto}
   .trial-topline{display:flex;align-items:center;gap:12px}
   .trial-topline .small{flex:0 0 auto;white-space:nowrap}
   .trial-topline .progress{flex:1 1 auto}
-  .ctx{text-align:center;font-size:14px;color:var(--sub);margin:2px 0}
-  .prompt{font-size:18px;font-weight:700;text-align:center;margin:8px 0 8px;line-height:1.35}
+  .prompt{font-size:17px;font-weight:700;text-align:center;margin:6px 0 4px;line-height:1.4}
   .prompt.trap{color:var(--warn);animation:flash 1s linear infinite}
   @keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
-  .trial-body{flex:1 1 auto;display:flex;align-items:center;gap:16px}
-  .choosearea{flex:1 1 auto;min-width:0}
-  .nextcol{flex:0 0 120px;display:flex;align-items:center;justify-content:center}
-  .nextcol .btn{width:100%;height:100%;border-radius:14px;font-size:17px}
+  .trial-body{display:flex;flex-direction:column;gap:14px}
+  /* 下一題置中於兩卡下方（桌機/手機皆置中，不把視線帶到右側） */
+  .nextrow{display:flex;justify-content:center}
+  .nextrow .btn{min-width:200px;font-size:17px}
   .pair{display:flex;gap:16px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
   /* 文字卡：敘述句記者簡介（米白卡文字 + 金色選中態） */
   .opt{flex:1 1 0;max-width:var(--card-w);border:2px solid var(--line);border-radius:14px;
     cursor:pointer;background:linear-gradient(180deg,#161d27 0%,#10151c 100%);transition:.15s;
-    position:relative;padding:22px 20px 20px;display:flex;flex-direction:column;min-height:190px;
+    position:relative;padding:18px 18px 16px;display:flex;flex-direction:column;
     box-shadow:0 2px 10px rgba(0,0,0,.35)}
   .opt:hover{border-color:#475569}
   .opt.sel{border-color:var(--gold);background:linear-gradient(180deg,#1d2330 0%,#15191f 100%);
@@ -72,8 +71,6 @@
   .opt.sel .chk{display:flex}
   .opt .byline{font-size:17px;line-height:1.85;letter-spacing:.2px;color:var(--cream)}
   .opt .byname{font-family:var(--serif);font-weight:700;font-size:19px;color:var(--gold2)}
-  .pickbar{display:flex;gap:16px;justify-content:center;margin:10px 0 0}
-  .pickbar .btn{flex:1 1 0;max-width:var(--card-w);padding:11px 18px}
   .scale{display:flex;gap:5px;justify-content:space-between}
   .scale label{flex:1 1 0;text-align:center;cursor:pointer}
   .scale input{display:none}
@@ -92,14 +89,10 @@
   .hide{display:none!important}
   .field input[type=url],.field input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0e1014;color:var(--txt);font-size:14px}
   @media (max-width:560px){
-    #screen-trial{min-height:auto}
-    .trial-panel{justify-content:flex-start}
-    .trial-body{flex-direction:column;gap:12px}
-    .pair{flex-direction:column;gap:18px}
-    .opt{max-width:100%;width:100%;min-height:auto}
-    .pickbar{display:none}
-    .nextcol{flex:0 0 auto;width:100%;position:sticky;bottom:8px;z-index:5}
-    .nextcol .btn{height:auto;padding:15px;font-size:18px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+    .pair{flex-direction:column;gap:16px}
+    .opt{max-width:100%;width:100%}
+    .nextrow{position:sticky;bottom:8px;z-index:5}
+    .nextrow .btn{width:100%;padding:15px;font-size:18px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
     .mobile-hint{display:block}
     .scale .dot{padding:9px 0;font-size:14px}
     .prompt{font-size:16px;margin:6px 0}
@@ -157,22 +150,15 @@
         <span class="small" id="trial-counter"></span>
         <div class="progress"><i id="trial-bar"></i></div>
       </div>
-      <div class="ctx" id="trial-ctx"></div>
       <div class="prompt" id="trial-prompt"></div>
-      <div class="mobile-hint">點選下方任一張卡片即可選取</div>
+      <div class="mobile-hint">點選任一張卡片即可選取</div>
     </div>
     <div class="trial-body">
-      <div class="choosearea">
-        <div class="pair">
-          <div class="opt" data-side="L" id="opt-L"><span class="lab">A</span><span class="chk">✓</span><div class="byline" id="by-L"></div></div>
-          <div class="opt" data-side="R" id="opt-R"><span class="lab">B</span><span class="chk">✓</span><div class="byline" id="by-R"></div></div>
-        </div>
-        <div class="pickbar">
-          <button class="btn ghost" id="pick-L">選 A</button>
-          <button class="btn ghost" id="pick-R">選 B</button>
-        </div>
+      <div class="pair">
+        <div class="opt" data-side="L" id="opt-L"><span class="lab">A</span><span class="chk">✓</span><div class="byline" id="by-L"></div></div>
+        <div class="opt" data-side="R" id="opt-R"><span class="lab">B</span><span class="chk">✓</span><div class="byline" id="by-R"></div></div>
       </div>
-      <div class="nextcol"><button class="btn" id="btn-trial-next" disabled>下一題</button></div>
+      <div class="nextrow"><button class="btn" id="btn-trial-next" disabled>下一題</button></div>
     </div>
   </div>
 </section>
@@ -352,13 +338,11 @@ function showItem(){
   STATE.current = { ...item, chosenSide:null };
   const outlet = item.outlet.name;
   const t = TASKS[item.task];
-  $('#trial-ctx').textContent = `情境：${outlet}的財經新聞`;
   if(item.kind==='trap'){
     const sideLabel = item.expectSide==='L' ? 'A' : 'B';
     $('#trial-prompt').innerHTML = `【注意力檢查】本題不需比較，請直接點選標示「${sideLabel}」的那一張卡片。`;
     $('#trial-prompt').classList.add('trap');
     $('#trial-counter').textContent = '注意力檢查';
-    $('#trial-ctx').textContent = '';
   } else {
     $('#trial-prompt').innerHTML = t.prompt.replaceAll('{OUTLET}', outlet);
     $('#trial-prompt').classList.remove('trap');
@@ -394,8 +378,6 @@ function gateNext(){
     else btn.textContent=`請再看一下…（${left}）`; };
   tick(); STATE.gateTimer=setInterval(tick,200);
 }
-$('#pick-L').onclick=()=>choose('L');
-$('#pick-R').onclick=()=>choose('R');
 $('#opt-L').onclick=()=>choose('L');
 $('#opt-R').onclick=()=>choose('R');
 
@@ -410,12 +392,11 @@ $('#btn-trial-next').onclick=()=>{
     c.passed=(c.chosenSide===c.expectSide);
     STATE.traps.push({ task:c.task, side:c.chosenSide, expectSide:c.expectSide, passed:c.passed, rtMs, t:now });
   } else if(c.kind==='dominance'){
-    // dominance holdout 的「正確答案」依 DV 方向：
-    //   read（正向）：理性選資歷全優卡（winSide）→ pass
-    //   wary（負向，警戒心）：資歷全優反而最不該警戒，理性選資歷劣卡（非 winSide）→ pass
-    const correctSide = c.task==='wary' ? (c.winSide==='L'?'R':'L') : c.winSide;
-    c.passed=(c.chosenSide===correctSide);
-    STATE.traps.push({ kind:'dominance', task:c.task, side:c.chosenSide, winSide:c.winSide, correctSide, passed:c.passed, rtMs, t:now });
+    // dominance holdout 僅對「繼續閱讀」(read，正向，有客觀正解=選資歷全優卡)做 pass 判定。
+    // 第二個 DV「不受市場利益影響」為探索性、無客觀正解 → 不判 pass（passed=null），僅記錄選擇。
+    const exploratory = (TASKS[c.task] && TASKS[c.task].exploratory);
+    c.passed = exploratory ? null : (c.chosenSide===c.winSide);
+    STATE.traps.push({ kind:'dominance', task:c.task, side:c.chosenSide, winSide:c.winSide, passed:c.passed, rtMs, t:now });
     STATE.responses.push({ kind:'dominance', task:c.task, trial:'dom', A:c.A, B:c.B, side:c.chosenSide, chosenName, outlet:outletKey, rtMs, t:now });
   } else if(c.kind==='repeat'){
     const orig=STATE.responses.find(r=>r.kind==='trial'&&r.task===c.task&&r.trial===c.ofTrial);
@@ -437,7 +418,7 @@ function origChosenName(orig){ return orig.side==='L'?orig.nameA:orig.nameB; }
  */
 function buildSurveyItems(){
   const flat=[];
-  [SCALE_EXPERTISE, SCALE_SKEPTICISM, SCALE_TRUST, MARKER].forEach(g=>{
+  [SCALE_EXPERTISE, SCALE_TRUST, MARKER].forEach(g=>{
     g.items.forEach(it=>{
       flat.push({ group:g.group, prefix:g.prefix, id:it.id, scale:g.scale, q: it.q });
     });

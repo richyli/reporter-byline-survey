@@ -139,57 +139,39 @@ const CHUNK_KEYS = ['edu', ...SOLO_KEYS];
 const LIKERT7 = ['1 非常不同意', '2', '3', '4 普通', '5', '6', '7 非常同意'];
 const LIKERT5 = ['1 非常不同意', '2', '3 普通', '4', '5 非常同意'];
 
-/* Mediator：感知記者專業性／權威 — McCroskey & Teven (1999) competence/authority 子維度，繁中 7 點。
- * 題幹脈絡指向「剛才看到的這類記者」。marker 題混入供 CMV。 */
+/* 量表精簡（使用者 2026-06-10）：只留「感知專業性」(mediator) + 「整體信任」(DV 驗證) 兩構面，
+ * 各 4 題、挑好答的（移除「值得倚賴/見識/沒有偏見」等難答題）；媒體既有信任各 1 題；marker 1 題。 */
+
+/* Mediator：感知記者專業性／權威 — McCroskey & Teven (1999) competence 子維度，繁中 7 點。 */
 const SCALE_EXPERTISE = {
   group: 'expertise', dim: '感知記者專業性／權威', scale: LIKERT7, prefix: 'q_exp_',
   intro: '請依你剛才看到的記者簡介，整體評估「這樣資歷的記者」給你的印象。',
   items: [
-    { id: 'expert',   q: '這樣的記者是某個領域的專家。' },
+    { id: 'expert',   q: '這樣的記者是財經領域的專家。' },
     { id: 'competent',q: '這樣的記者很有能力。' },
-    { id: 'informed', q: '這樣的記者見多識廣、消息靈通。' },
-    { id: 'intelligent', q: '這樣的記者很有見識。' },
+    { id: 'informed', q: '這樣的記者消息靈通、掌握第一手資訊。' },
     { id: 'trained',  q: '這樣的記者受過專業訓練。' },
-    { id: 'reliable', q: '這樣的記者值得倚賴。' },
   ],
 };
 
-/* DV(b) 警戒心 — Tsfati & Cappella (2003) news media skepticism 改編，主詞改「這位記者/這篇報導」，5 點。
- * 反向計分題（fair/accurate/whole-story/trusted）以「我會懷疑…」正向化，避免反向題造偽因素。 */
-const SCALE_SKEPTICISM = {
-  group: 'skepticism', dim: '警戒心', scale: LIKERT5, prefix: 'q_skep_',
-  intro: '想像你正在讀這類記者寫的一則新聞，請評估以下感受。',
-  items: [
-    { id: 'unfair',    q: '我會懷疑這位記者報導得不夠公正。' },
-    { id: 'inaccurate',q: '我會懷疑這篇報導不夠準確。' },
-    { id: 'partial',   q: '我會懷疑這篇報導沒有把事情說完整。' },
-    { id: 'distrust',  q: '我對這位記者的報導會抱持戒心、不會輕易相信。' },
-    { id: 'speed',     q: '我擔心這位記者為了搶快而犧牲了準確。' },
-    { id: 'harm',      q: '我覺得這類報導對社會的幫助有限。' },
-  ],
-};
-
-/* 整體信任（次 DV）— Meyer (1988) believability 5 題，5 點正向。 */
+/* 整體信任（DV 驗證）— Meyer (1988) believability，5 點正向；移除難答的「沒有偏見」。 */
 const SCALE_TRUST = {
   group: 'trust', dim: '整體新聞信任', scale: LIKERT5, prefix: 'q_trust_',
-  intro: '整體而言，對這類記者寫的新聞，你的看法是：',
+  intro: '整體而言，對這類記者寫的財經新聞，你的看法是：',
   items: [
     { id: 'fair',     q: '這類報導是公正的。' },
-    { id: 'unbiased', q: '這類報導是沒有偏見的。' },
     { id: 'complete', q: '這類報導把事情交代得完整。' },
     { id: 'accurate', q: '這類報導是準確的。' },
     { id: 'trusted',  q: '這類報導可以信任。' },
   ],
 };
 
-/* 對指派媒體的既有信任（控制 between-subject carry-over）。{OUTLET} 動態替換為中央社/三立新聞。3 點題以 5 點呈現。 */
+/* 對指派媒體的既有信任（控制 within-subject carry-over）：兩家各 1 題。{OUTLET} 動態替換。 */
 const SCALE_OUTLET = {
   group: 'outlet', dim: '對該媒體既有信任', scale: LIKERT5, prefix: 'q_outlet_',
-  intro: '在參加這個研究之前，你對「{OUTLET}」這家媒體本身的看法是：',
+  intro: '在參加這個研究之前，你對下列媒體的看法是：',
   items: [
     { id: 'cred',  q: '整體而言，{OUTLET} 是可信的媒體。' },
-    { id: 'prof',  q: '{OUTLET} 的新聞報導是專業的。' },
-    { id: 'often', q: '我平常會接觸 {OUTLET} 的新聞。' },
   ],
 };
 
@@ -213,11 +195,13 @@ const TASKS = {
     prompt: '當你在{OUTLET}看到一則財經新聞報導時，哪一位記者會讓你<b>更想繼續閱讀</b>？',
     intro: '接下來，每題並排呈現兩位記者的簡介。請依第一直覺，選出<b>更想繼續閱讀</b>其報導的那一位。沒有對錯。',
   },
+  // 第二個 DV（探索性、正面措辭）：不受市場利益影響。task key 仍沿用 'wary' 不變動，避免欄位連鎖更名。
   wary: {
-    key: 'wary', dv: 'wariness', label: '警戒心',
-    title: '警戒心',
-    prompt: '當你在{OUTLET}看到一則財經新聞報導時，哪一位記者會讓你<b>提高警戒心</b>？',
-    intro: '接下來，每題並排呈現兩位記者的簡介。請依第一直覺，選出讓你<b>提高警戒心</b>（比較會有戒備、不敢輕信）的那一位。沒有對錯。',
+    key: 'wary', dv: 'market_independence', label: '不受市場利益影響',
+    title: '不受市場利益影響',
+    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者<b>更不會被市場利益影響</b>、報導比較中立可信？',
+    intro: '接下來，每題並排呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>更不會被市場利益影響</b>、報導比較中立可信的那一位。沒有對錯。',
+    exploratory: true,   // 無客觀正解，dominance holdout 不作 pass 判定
   },
 };
 
