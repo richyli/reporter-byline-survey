@@ -5,98 +5,93 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>記者署名研究（測試版）</title>
 <style>
-  /* 高級財經媒體配色：深墨藍底 + 暖金強調 + 米白卡文字 + 襯線標題 */
+  /* WSJ／彭博風：黑白極簡、細襯線、印刷版報紙感。無金色、無漸層、無圓角光暈。 */
   :root{
-    --bg:#0c1016; --bg2:#0a0e13; --panel:#141a22; --panel2:#1b222c;
-    --line:#2a3340; --txt:#eef1f5; --sub:#97a2b0; --cream:#f3ecdc;
-    --gold:#c9a24a; --gold2:#e2c578; --golddark:#a8842f;
-    --ok:#3a9d6b; --warn:#d9b94e; --card-w:400px;
-    --serif:"Noto Serif TC","Source Han Serif TC","PMingLiU",Georgia,serif;
+    --bg:#f7f6f3;          /* 極淺暖灰（報紙白）*/
+    --paper:#ffffff;       /* 卡片純白 */
+    --ink:#16140f;         /* 墨黑字 */
+    --sub:#6b6862;         /* 次要灰 */
+    --line:#d8d4cc;        /* 細線（hairline）*/
+    --rule:#16140f;        /* 報頭粗線（黑）*/
+    --sel:#16140f;         /* 選中＝黑邊 */
+    --selbg:#f0eee9;       /* 選中底（極淡灰）*/
+    --accent:#8a1f1f;      /* 克制酒紅（僅用於極少數強調，如 trap）*/
+    --card-w:400px;
+    --serif:"Noto Serif TC","Source Han Serif TC","Songti TC","PMingLiU",Georgia,"Times New Roman",serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;
-    background:
-      radial-gradient(1200px 500px at 50% -10%, #15202c 0%, rgba(21,32,44,0) 60%),
-      var(--bg);
-    color:var(--txt);
-    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.65;}
-  .wrap{max-width:940px;margin:0 auto;padding:10px 14px 24px;}
-  h1{font-family:var(--serif);font-size:23px;font-weight:700;margin:.2em 0 .5em;
-     letter-spacing:.5px;color:var(--cream)}
-  h2{font-family:var(--serif);font-size:18px;margin:1.1em 0 .5em;color:var(--cream)}
-  p{margin:.5em 0} .sub{color:var(--sub);font-size:14px}
-  .sig{font-family:var(--serif);color:var(--gold2);font-size:13px;letter-spacing:1px;
-       margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
-  .badge{display:inline-block;font-size:12px;background:linear-gradient(135deg,var(--gold),var(--golddark));
-    color:#1a130a;padding:1px 9px;border-radius:10px;font-weight:700;margin-left:6px;vertical-align:middle}
-  .panel{background:linear-gradient(180deg,var(--panel) 0%,var(--bg2) 100%);
-    border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;
-    box-shadow:0 1px 0 rgba(226,197,120,.06) inset}
-  .btn{display:inline-block;border:none;border-radius:10px;padding:13px 22px;font-size:16px;font-weight:700;
-    cursor:pointer;background:linear-gradient(135deg,var(--gold) 0%,var(--golddark) 100%);
-    color:#1a130a;transition:.14s;box-shadow:0 4px 14px rgba(201,162,74,.22)}
-  .btn:hover{filter:brightness(1.08);box-shadow:0 6px 18px rgba(201,162,74,.32)}
-  .btn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
-  .progress{height:5px;background:#1e2630;border-radius:6px;overflow:hidden}
-  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--golddark),var(--gold2));width:0;transition:width .25s}
-  /* 對比題畫面：自然高度（不再強撐滿視窗），垂直堆疊 */
-  .trial-panel{padding:14px 18px;margin:8px 0;display:flex;flex-direction:column;gap:10px}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.7;}
+  .wrap{max-width:920px;margin:0 auto;padding:10px 14px 28px;}
+  /* 報頭：粗黑上下線 + 襯線刊名 */
+  .masthead{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:3px;
+    text-align:center;padding:8px 0;margin:0 0 14px;text-transform:none;
+    border-top:2px solid var(--rule);border-bottom:1px solid var(--rule)}
+  h1{font-family:var(--serif);font-size:24px;font-weight:700;margin:.1em 0 .5em;
+     letter-spacing:.3px;color:var(--ink);line-height:1.3}
+  h2{font-family:var(--serif);font-size:18px;margin:1.1em 0 .5em;color:var(--ink)}
+  p{margin:.55em 0} .sub{color:var(--sub);font-size:14px}
+  .sig{font-family:var(--serif);color:var(--sub);font-size:13px;letter-spacing:2px;
+       margin-top:20px;border-top:1px solid var(--line);padding-top:10px;text-align:right}
+  .panel{background:var(--paper);border:1px solid var(--line);padding:20px;margin:14px 0}
+  .btn{display:inline-block;border:1px solid var(--ink);padding:12px 26px;font-size:16px;font-weight:700;
+    cursor:pointer;background:var(--ink);color:#fff;transition:.12s;letter-spacing:1px}
+  .btn:hover{background:#000}
+  .btn:disabled{opacity:.3;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .progress{height:2px;background:var(--line);overflow:hidden}
+  .progress > i{display:block;height:100%;background:var(--ink);width:0;transition:width .25s}
+  .trial-panel{padding:8px 4px;margin:6px 0;display:flex;flex-direction:column;gap:12px}
   .trial-head{flex:0 0 auto}
   .trial-topline{display:flex;align-items:center;gap:12px}
-  .trial-topline .small{flex:0 0 auto;white-space:nowrap}
+  .trial-topline .small{flex:0 0 auto;white-space:nowrap;font-family:var(--serif);text-transform:uppercase;letter-spacing:1px}
   .trial-topline .progress{flex:1 1 auto}
-  .prompt{font-size:17px;font-weight:700;text-align:center;margin:6px 0 4px;line-height:1.4}
-  .prompt.trap{color:var(--warn);animation:flash 1s linear infinite}
-  @keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
-  .trial-body{display:flex;flex-direction:column;gap:14px}
-  /* 下一題置中於兩卡下方（桌機/手機皆置中，不把視線帶到右側） */
+  .prompt{font-family:var(--serif);font-size:19px;font-weight:700;text-align:center;margin:6px 0 2px;line-height:1.45}
+  .prompt.trap{color:var(--accent);animation:flash 1s linear infinite}
+  @keyframes flash{0%,100%{opacity:1}50%{opacity:.4}}
+  .trial-body{display:flex;flex-direction:column;gap:16px}
   .nextrow{display:flex;justify-content:center}
-  .nextrow .btn{min-width:200px;font-size:17px}
-  .pair{display:flex;gap:16px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
-  /* 文字卡：敘述句記者簡介（米白卡文字 + 金色選中態） */
-  .opt{flex:1 1 0;max-width:var(--card-w);border:2px solid var(--line);border-radius:14px;
-    cursor:pointer;background:linear-gradient(180deg,#161d27 0%,#10151c 100%);transition:.15s;
-    position:relative;padding:18px 18px 16px;display:flex;flex-direction:column;
-    box-shadow:0 2px 10px rgba(0,0,0,.35)}
-  .opt:hover{border-color:#475569}
-  .opt.sel{border-color:var(--gold);background:linear-gradient(180deg,#1d2330 0%,#15191f 100%);
-    box-shadow:0 0 0 3px rgba(201,162,74,.4),0 10px 28px rgba(201,162,74,.18);transform:translateY(-3px)}
-  .opt .lab{position:absolute;top:-13px;left:16px;background:var(--panel2);color:var(--cream);
-    font-family:var(--serif);font-size:14px;font-weight:700;padding:3px 14px;border-radius:20px;border:1px solid var(--line)}
-  .opt.sel .lab{background:linear-gradient(135deg,var(--gold),var(--golddark));color:#1a130a;border-color:var(--gold)}
-  .opt .chk{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;
-    background:linear-gradient(135deg,var(--gold),var(--golddark));color:#1a130a;font-size:16px;font-weight:900;
-    display:none;align-items:center;justify-content:center}
-  .opt.sel .chk{display:flex}
-  .opt .byline{font-size:17px;line-height:1.85;letter-spacing:.2px;color:var(--cream)}
-  /* 姓名非屬性，刻意低調（淺灰、不加大不加色），不搶內文注意力 */
-  .opt .byname{font-weight:600;font-size:16px;color:#8b96a4}
+  .nextrow .btn{min-width:200px}
+  .pair{display:flex;gap:18px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
+  /* 文字卡：白紙黑字、細黑框、選中＝粗黑框 + 淡灰底（無光暈無位移）*/
+  .opt{flex:1 1 0;max-width:var(--card-w);border:1px solid var(--line);
+    cursor:pointer;background:var(--paper);transition:.12s;position:relative;
+    padding:22px 20px 20px;display:flex;flex-direction:column}
+  .opt:hover{border-color:#9a958c}
+  .opt.sel{border:2px solid var(--sel);background:var(--selbg);padding:21px 19px 19px}
+  .opt .lab{position:absolute;top:-11px;left:18px;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:13px;font-weight:700;padding:1px 10px;letter-spacing:1px;border:1px solid var(--line)}
+  .opt.sel .lab{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .opt .chk{position:absolute;top:10px;right:12px;font-size:18px;font-weight:900;color:var(--ink);display:none}
+  .opt.sel .chk{display:block}
+  .opt .byline{font-family:var(--serif);font-size:17px;line-height:1.95;color:var(--ink)}
+  /* 姓名非屬性，淺灰低調不搶內文 */
+  .opt .byname{font-weight:700;font-size:15px;color:#9a958c;letter-spacing:.5px}
   .scale{display:flex;gap:5px;justify-content:space-between}
   .scale label{flex:1 1 0;text-align:center;cursor:pointer}
   .scale input{display:none}
-  .scale .dot{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 0;font-size:15px;background:var(--panel2);transition:.1s}
-  .scale input:checked + .dot{background:linear-gradient(135deg,var(--gold),var(--golddark));border-color:var(--gold);color:#1a130a;font-weight:700}
+  .scale .dot{display:block;border:1px solid var(--line);padding:10px 0;font-size:15px;background:var(--paper);transition:.1s}
+  .scale input:checked + .dot{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
   .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:4px}
-  .field{margin:16px 0} .field > label{display:block;font-size:15px;margin-bottom:6px;font-weight:600}
+  .field{margin:18px 0} .field > label{display:block;font-size:15px;margin-bottom:7px;font-weight:600;line-height:1.5}
   .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-  .opts label{border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer;background:var(--panel2);font-size:14px}
+  .opts label{border:1px solid var(--line);padding:8px 16px;cursor:pointer;background:var(--paper);font-size:14px}
   .opts input{display:none}
-  .opts label:has(input:checked){background:linear-gradient(135deg,var(--gold),var(--golddark));border-color:var(--gold);color:#1a130a;font-weight:700}
-  .grp-intro{font-family:var(--serif);font-size:15px;color:var(--cream);background:#11161d;border-left:3px solid var(--gold);padding:8px 12px;border-radius:6px;margin:18px 0 6px}
+  .opts label:has(input:checked){background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+  .grp-intro{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink);
+    border-bottom:1px solid var(--rule);padding:0 0 6px;margin:22px 0 10px}
   .nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
   .small{font-size:13px;color:var(--sub)}
   .mobile-hint{display:none;text-align:center;color:var(--sub);font-size:13px;margin:-2px 0 6px}
   .hide{display:none!important}
-  .field input[type=url],.field input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0e1014;color:var(--txt);font-size:14px}
   @media (max-width:560px){
-    .pair{flex-direction:column;gap:16px}
+    .pair{flex-direction:column;gap:14px}
     .opt{max-width:100%;width:100%}
     .nextrow{position:sticky;bottom:8px;z-index:5}
-    .nextrow .btn{width:100%;padding:15px;font-size:18px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+    .nextrow .btn{width:100%;padding:15px;font-size:18px;box-shadow:0 -2px 12px rgba(0,0,0,.12)}
     .mobile-hint{display:block}
     .scale .dot{padding:9px 0;font-size:14px}
-    .prompt{font-size:16px;margin:6px 0}
+    .prompt{font-size:17px;margin:6px 0}
     .opt .byline{font-size:16px}
   }
 </style>
@@ -105,35 +100,15 @@
 <div class="wrap">
 <div id="errbox" style="display:none;background:#3a1212;border:1px solid #a33;color:#ffd;padding:10px 14px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap"></div>
 
-<!-- 0. 設定（測試用，正式版隱藏） -->
-<section id="screen-config" class="panel">
-  <h1>記者署名研究 <span class="badge">測試版</span></h1>
-  <p class="sub">內部測試介面，確認流程與版面在手機／電腦正常。正式上線本區隱藏。</p>
-  <div class="field">
-    <label>資料回傳網址 SheetMonkey form URL（留空＝下載模式）</label>
-    <input id="cfg-endpoint" type="url" placeholder="https://api.sheetmonkey.io/form/XXXX">
-  </div>
-  <div class="field">
-    <label>每個 DV 任務的對比題數（閱讀 N + 警戒 N）</label>
-    <input id="cfg-trials" type="number" min="3" max="12" value="6">
-  </div>
-  <div class="field">
-    <label>每題最短作答秒數</label>
-    <input id="cfg-minsec" type="number" min="0" max="30" value="3">
-  </div>
-  <p class="small">媒體脈絡（中央社／三立新聞）每題隨機，題內兩位記者同家。</p>
-  <button class="btn" id="btn-start">開始測試</button>
-  <div class="sig">政大新聞 李怡志</div>
-</section>
-
-<!-- 1. 前導語 -->
-<section id="screen-intro" class="panel hide">
+<!-- 1. 研究說明（正式版首頁） -->
+<section id="screen-intro" class="panel">
+  <div class="masthead">記者署名與財經新聞</div>
   <h1>研究說明</h1>
   <p>請想像你正在閱讀<b>財經新聞</b>。每則報導的署名（byline）會附上撰稿記者的簡短資歷介紹；題幹會標明這是<b>中央社</b>或<b>三立新聞</b>的報導。</p>
   <p>本研究分兩部分，每題並排呈現<b>兩位記者</b>的資歷簡介，請依你的<b>第一直覺</b>作答。沒有對錯，約 6–10 分鐘。</p>
   <p class="small">本研究使用虛構記者，姓名與資歷組合皆為隨機產生，與真實人物無關；作答匿名，僅供學術研究。</p>
-  <button class="btn" id="btn-intro-next">我了解，開始作答</button>
-  <div class="sig">政大新聞 李怡志</div>
+  <button class="btn" id="btn-intro-next">開始作答</button>
+  <div class="sig">政大新聞　李怡志</div>
 </section>
 
 <!-- 2. 任務前導 -->
@@ -196,7 +171,6 @@ window.addEventListener('error', e=>{
   if(box){ box.style.display='block'; box.textContent='⚠ JS 錯誤：'+e.message+' @ '+(e.filename||'').split('/').pop()+':'+e.lineno; }
 });
 const DEFAULT_ENDPOINT = 'https://api.sheetmonkey.io/form/8utmWimsSuNDoEiVFz8Cyb';   // R Reporter Byline 專屬 form
-window.addEventListener('DOMContentLoaded', ()=>{ if(DEFAULT_ENDPOINT) $('#cfg-endpoint').value = DEFAULT_ENDPOINT; });
 
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
@@ -206,7 +180,7 @@ const CONFIG_OK = (typeof DESIGN !== 'undefined') && (typeof ATTRS !== 'undefine
 const STATE = {
   pid:'P'+Math.floor(performance.now()*1000).toString(36)+Math.floor(Math.random()*1e6).toString(36),
   startedAt:new Date().toISOString(),
-  endpoint:'',
+  endpoint: DEFAULT_ENDPOINT,
   nTrialsPerTask: CONFIG_OK ? DESIGN.nTrialsPerTask : 6,
   minAnswerSec: CONFIG_OK ? DESIGN.minAnswerSec : 3,
   outlet:null,            // between-subject：整份固定一家媒體
@@ -316,23 +290,19 @@ function buildSequence(){
 function progressPct(){ return Math.min(100, STATE.seqIdx/STATE.seq.length*100); }
 
 /* ---- 流程 ---- */
-$('#btn-start').onclick = ()=>{
-  STATE.endpoint = $('#cfg-endpoint').value.trim();
-  STATE.nTrialsPerTask = Math.max(3, parseInt($('#cfg-trials').value||'6',10));
-  STATE.minAnswerSec = Math.max(0, parseInt($('#cfg-minsec').value||'3',10));
+// 正式版：研究說明為首頁，按「開始作答」即初始化並進入第一個任務。
+$('#btn-intro-next').onclick = ()=>{
   STATE.chunkOrder = shuffle(CHUNK_KEYS);
   // between-subject 媒體：整份固定一家（進場隨機分派，全程不變）
   STATE.outlet = rand(OUTLETS);
-  // 雙 DV 任務順序 counterbalance（用 pid 末碼決定，測試版簡化）
+  // 雙 DV 任務順序 counterbalance（pid 末碼）
   const flip = (STATE.pid.charCodeAt(STATE.pid.length-1) % 2) === 0;
   STATE.taskOrder = flip ? ['wary','read'] : ['read','wary'];
   buildSequence();
-  // 標記每個任務的「子序列起點」供任務前導插入
   STATE.taskStarts = {};
   STATE.taskOrder.forEach(tk=>{ STATE.taskStarts[tk] = STATE.seq.findIndex(it=>it.task===tk); });
-  show('#screen-intro');
+  STATE.seqIdx=0; gotoCurrentOrTaskIntro();
 };
-$('#btn-intro-next').onclick = ()=>{ STATE.seqIdx=0; gotoCurrentOrTaskIntro(); };
 
 // 在每個 DV 任務的第一題前插入該任務前導
 function gotoCurrentOrTaskIntro(){
