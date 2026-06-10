@@ -70,7 +70,8 @@
     display:none;align-items:center;justify-content:center}
   .opt.sel .chk{display:flex}
   .opt .byline{font-size:17px;line-height:1.85;letter-spacing:.2px;color:var(--cream)}
-  .opt .byname{font-family:var(--serif);font-weight:700;font-size:19px;color:var(--gold2)}
+  /* 姓名非屬性，刻意低調（淺灰、不加大不加色），不搶內文注意力 */
+  .opt .byname{font-weight:600;font-size:16px;color:#8b96a4}
   .scale{display:flex;gap:5px;justify-content:space-between}
   .scale label{flex:1 1 0;text-align:center;cursor:pointer}
   .scale input{display:none}
@@ -208,6 +209,7 @@ const STATE = {
   endpoint:'',
   nTrialsPerTask: CONFIG_OK ? DESIGN.nTrialsPerTask : 6,
   minAnswerSec: CONFIG_OK ? DESIGN.minAnswerSec : 3,
+  outlet:null,            // between-subject：整份固定一家媒體
   taskOrder:[],           // 雙 DV 任務呈現順序（counterbalance）
   chunkOrder:[],          // 受訪者內固定塊順序（edu + 4 solo）
   seq:[], seqIdx:0, shownAt:0, gateTimer:null, current:null,
@@ -254,7 +256,9 @@ function makeDominancePair(){
 function assignName(used){ let n; let g=0; do{ n=rand(NAME_POOL); g++; }while(used.has(n)&&g<50); used.add(n); return n; }
 
 /* 每題抽一個媒體（within-subject：題內兩位同家、題間隨機） */
-function pickOutlet(){ return rand(OUTLETS); }
+/* between-subject：整份固定一家媒體（進場分派 STATE.outlet）。
+ * 每個 item 仍帶 .outlet 以沿用渲染/flatten 邏輯，但全程同一家、題間不切換（降認知負荷）。 */
+function pickOutlet(){ return STATE.outlet; }
 
 /* ---- 建立單一 DV 任務的子序列 ----
  * n 題 trial + 1 trap（第1題後，trap 各 DV 指定不同邊）+ 1 dominance + 1 鏡像 repeat。
@@ -310,6 +314,8 @@ $('#btn-start').onclick = ()=>{
   STATE.nTrialsPerTask = Math.max(3, parseInt($('#cfg-trials').value||'6',10));
   STATE.minAnswerSec = Math.max(0, parseInt($('#cfg-minsec').value||'3',10));
   STATE.chunkOrder = shuffle(CHUNK_KEYS);
+  // between-subject 媒體：整份固定一家（進場隨機分派，全程不變）
+  STATE.outlet = rand(OUTLETS);
   // 雙 DV 任務順序 counterbalance（用 pid 末碼決定，測試版簡化）
   const flip = (STATE.pid.charCodeAt(STATE.pid.length-1) % 2) === 0;
   STATE.taskOrder = flip ? ['wary','read'] : ['read','wary'];
@@ -480,6 +486,7 @@ function payload(){
   STATE.traps.filter(t=>t.kind==='dominance').forEach(t=>{ domPass[t.task]=t.passed; });
   return {
     pid:STATE.pid, startedAt:STATE.startedAt, finishedAt:new Date().toISOString(),
+    outlet:STATE.outlet?STATE.outlet.key:null, outletName:STATE.outlet?STATE.outlet.name:null,
     taskOrder:STATE.taskOrder,
     chunkOrder:STATE.chunkOrder, nTrialsPerTask:STATE.nTrialsPerTask, minAnswerSec:STATE.minAnswerSec,
     ua:navigator.userAgent,
@@ -492,6 +499,7 @@ const b01 = v => v===true?1 : v===false?0 : '';
 function flatten(data){
   const flat={
     pid:data.pid, startedAt:data.startedAt, finishedAt:data.finishedAt,
+    outlet:data.outlet, outletName:data.outletName,
     taskOrder:(data.taskOrder||[]).join('>'),
     chunkOrder:(data.chunkOrder||[]).join('>'),
     nTrialsPerTask:data.nTrialsPerTask, minAnswerSec:data.minAnswerSec,
