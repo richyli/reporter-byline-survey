@@ -232,13 +232,20 @@ function randProfile(){ const p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).i
 function diffCount(A,B){ return ATTR_KEYS.reduce((n,k)=>n+(A[k]!==B[k]?1:0),0); }
 function orderedWins(A,B){ return ORDERED.some(k=>A[k]>B[k]); } // A 在某有序屬性嚴格大於 B
 function identical(A,B){ return ATTR_KEYS.every(k=>A[k]===B[k]); }
+/* 長度平衡：避免一卡很長、一卡很短誘發「選長的」count heuristic（使用者 2026-06-11）。
+ * 可見子句數 = 學歷塊(永遠 1，major 必有) + 非「無」的 award/tenure/teach/proauth。
+ * 約束：兩卡子句數差 ≤1 且 整句字元長度差 ≤12。 */
+function visibleClauses(p){ let n=1; if(p.award!==1)n++; n++; if(p.teach!==1)n++; if(p.proauth!==1)n++; return n; }
+function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS).length; }
 function makePair(){
   let A,B,guard=0;
   do{ A=randProfile(); B=randProfile(); guard++; }
-  while(guard<5000 && (
+  while(guard<8000 && (
     identical(A,B) ||
     diffCount(A,B) < MIN_DIFF ||
-    !orderedWins(A,B) || !orderedWins(B,A)
+    !orderedWins(A,B) || !orderedWins(B,A) ||
+    Math.abs(visibleClauses(A)-visibleClauses(B)) > 1 ||   // 子句數差 ≤1
+    Math.abs(bodyLen(A)-bodyLen(B)) > 12                   // 字元長度差 ≤12
   ));
   return Math.random()<.5 ? [A,B] : [B,A];
 }
