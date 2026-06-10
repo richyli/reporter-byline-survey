@@ -144,7 +144,7 @@
 
 <!-- 2. 任務前導 -->
 <section id="screen-taskintro" class="panel hide">
-  <h1>開始作答</h1>
+  <h1 id="task-title">開始作答</h1>
   <p id="task-desc"></p>
   <button class="btn" id="btn-task-next">開始</button>
 </section>
@@ -214,15 +214,24 @@ window.addEventListener('DOMContentLoaded', ()=>{ if(DEFAULT_ENDPOINT) $('#cfg-e
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
+// config.js 是否成功載入（防止外部 script 未載入時整個 inline 腳本在 STATE 初始化就拋錯、導致所有按鈕失效）
+const CONFIG_OK = (typeof DESIGN !== 'undefined') && (typeof ATTRS !== 'undefined') && (typeof TASKS !== 'undefined');
 const STATE = {
   pid:'P'+Math.floor(performance.now()*1000).toString(36)+Math.floor(Math.random()*1e6).toString(36),
   startedAt:new Date().toISOString(),
-  endpoint:'', nTrialsPerTask:DESIGN.nTrialsPerTask, minAnswerSec:DESIGN.minAnswerSec,
+  endpoint:'',
+  nTrialsPerTask: CONFIG_OK ? DESIGN.nTrialsPerTask : 6,
+  minAnswerSec: CONFIG_OK ? DESIGN.minAnswerSec : 3,
   taskOrder:[],           // 雙 DV 任務呈現順序（counterbalance）
   chunkOrder:[],          // 受訪者內固定塊順序（edu + 4 solo）
   seq:[], seqIdx:0, shownAt:0, gateTimer:null, current:null,
   responses:[], traps:[], repeats:[], survey:{},
 };
+// 若 config.js 沒載到，明確告知而非靜默讓按鈕無反應
+if(!CONFIG_OK){ window.addEventListener('DOMContentLoaded', ()=>{
+  const box=document.getElementById('errbox');
+  if(box){ box.style.display='block'; box.textContent='⚠ 設定檔（config.js）未載入，請重新整理頁面（Ctrl/⌘+Shift+R 強制重載）。若持續發生請回報。'; }
+}); }
 
 /* ---- 配對產生：7 屬性，minimal overlap + 互有勝負 ----
  * 規則（SoT §9）：左右至少 N-3 屬性不同（7 屬性→≥4，因 teach 僅 2 水準、放寬一格）；
