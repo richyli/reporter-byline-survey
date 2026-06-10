@@ -153,10 +153,7 @@
   <h1>完成 ✓</h1>
   <p id="done-msg"></p>
   <div id="done-actions"></div>
-  <details style="margin-top:14px"><summary class="small">展開原始資料（JSON）</summary>
-    <pre id="done-json" style="white-space:pre-wrap;font-size:11px;color:var(--sub);background:#0e1014;padding:10px;border-radius:8px;overflow:auto;max-height:340px"></pre>
-  </details>
-  <div class="sig">政大新聞 李怡志</div>
+  <div class="sig">政大新聞　李怡志</div>
 </section>
 
 </div>
@@ -206,20 +203,22 @@ function randProfile(){ const p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).i
 function diffCount(A,B){ return ATTR_KEYS.reduce((n,k)=>n+(A[k]!==B[k]?1:0),0); }
 function orderedWins(A,B){ return ORDERED.some(k=>A[k]>B[k]); } // A 在某有序屬性嚴格大於 B
 function identical(A,B){ return ATTR_KEYS.every(k=>A[k]===B[k]); }
-/* 長度平衡：避免一卡很長、一卡很短誘發「選長的」count heuristic（使用者 2026-06-11）。
+/* 長度平衡：避免一卡長、一卡短誘發「選行數多的」count heuristic（使用者 2026-06-11）。
+ * 「行數差」源於「子句數差」（卡寬固定，多一句常多一行），故約束改為**子句數完全相等**（差 0）
+ * 並把字元長度差收到 ≤8，確保兩卡行數一致、不再出現「兩行 vs 三行」。
  * 可見子句數 = 學歷塊(永遠 1，major 必有) + 非「無」的 award/tenure/teach/proauth。
- * 約束：兩卡子句數差 ≤1 且 整句字元長度差 ≤12。 */
+ * 代價：award/teach/proauth/school/degree 的「無/不提」需成對出現，略降該對比設計效率（可接受）。 */
 function visibleClauses(p){ let n=1; if(p.award!==1)n++; n++; if(p.teach!==1)n++; if(p.proauth!==1)n++; return n; }
 function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS).length; }
 function makePair(){
   let A,B,guard=0;
   do{ A=randProfile(); B=randProfile(); guard++; }
-  while(guard<8000 && (
+  while(guard<15000 && (
     identical(A,B) ||
     diffCount(A,B) < MIN_DIFF ||
     !orderedWins(A,B) || !orderedWins(B,A) ||
-    Math.abs(visibleClauses(A)-visibleClauses(B)) > 1 ||   // 子句數差 ≤1
-    Math.abs(bodyLen(A)-bodyLen(B)) > 12                   // 字元長度差 ≤12
+    visibleClauses(A) !== visibleClauses(B) ||              // 子句數完全相等 → 行數一致
+    Math.abs(bodyLen(A)-bodyLen(B)) > 8                     // 字元長度差 ≤8
   ));
   return Math.random()<.5 ? [A,B] : [B,A];
 }
@@ -510,8 +509,8 @@ function flatten(data){
 }
 function finish(){
   const data=payload(); const flat=flatten(data);
-  const json=JSON.stringify(flat,null,2);
-  $('#done-json').textContent=json; show('#screen-done');
+  const json=JSON.stringify(flat,null,2);   // 保留供上傳失敗時下載備份
+  show('#screen-done');
   if(STATE.endpoint){
     $('#done-msg').textContent='資料上傳中…';
     fetch(STATE.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(flat)})
