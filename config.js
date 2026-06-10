@@ -139,37 +139,37 @@ const CHUNK_KEYS = ['edu', ...SOLO_KEYS];
 const LIKERT7 = ['1 非常不同意', '2', '3', '4 普通', '5', '6', '7 非常同意'];
 const LIKERT5 = ['1 非常不同意', '2', '3 普通', '4', '5 非常同意'];
 
-/* 量表精簡（使用者 2026-06-10）：只留「感知專業性」(mediator) + 「整體信任」(DV 驗證) 兩構面，
- * 各 4 題、挑好答的（移除「值得倚賴/見識/沒有偏見」等難答題）；媒體既有信任各 1 題；marker 1 題。 */
+/* 量表重設（使用者 2026-06-10）：原「感知某記者專業/信任」缺評估對象、受訪者無法答。
+ * 改為兩個「受訪者自身一般傾向」構面（永遠有對象＝你自己）：
+ *   (1) 對新聞的普遍信任（Meyer 1988 believability 改一般版，主詞＝台灣新聞）
+ *   (2) 是否會看報導者資格（本研究核心 moderator，2 題簡單總括） */
 
-/* Mediator：感知記者專業性／權威 — McCroskey & Teven (1999) competence 子維度，繁中 7 點。 */
-const SCALE_EXPERTISE = {
-  group: 'expertise', dim: '感知記者專業性／權威', scale: LIKERT7, prefix: 'q_exp_',
-  intro: '請依你剛才看到的記者簡介，整體評估「這樣資歷的記者」給你的印象。',
+/* 構面 1：對新聞的普遍信任 — Meyer (1988) believability 改一般版，5 點。 */
+const SCALE_NEWSTRUST = {
+  group: 'newstrust', dim: '對新聞的普遍信任', scale: LIKERT5, prefix: 'q_ntrust_',
+  intro: '以下是你對「台灣新聞」整體的看法，請依你平常的感受作答。',
   items: [
-    { id: 'expert',   q: '這樣的記者是財經領域的專家。' },
-    { id: 'competent',q: '這樣的記者很有能力。' },
-    { id: 'informed', q: '這樣的記者消息靈通、掌握第一手資訊。' },
-    { id: 'trained',  q: '這樣的記者受過專業訓練。' },
+    { id: 'credible', q: '整體而言，台灣的新聞是可信的。' },
+    { id: 'fair',     q: '整體而言，台灣的新聞報導是公正的。' },
+    { id: 'accurate', q: '整體而言，台灣的新聞報導是準確的。' },
+    { id: 'trust',    q: '整體而言，我信任台灣的新聞媒體。' },
   ],
 };
 
-/* 整體信任（DV 驗證）— Meyer (1988) believability，5 點正向；移除難答的「沒有偏見」。 */
-const SCALE_TRUST = {
-  group: 'trust', dim: '整體新聞信任', scale: LIKERT5, prefix: 'q_trust_',
-  intro: '整體而言，對這類記者寫的財經新聞，你的看法是：',
+/* 構面 2：是否會看報導者資格（核心 moderator）— 2 題，問受訪者平常的閱讀習慣。 */
+const SCALE_CREDLOOK = {
+  group: 'credlook', dim: '是否在意記者資格', scale: LIKERT5, prefix: 'q_cred_',
+  intro: '以下是你平常閱讀新聞的習慣，請依實際情況作答。',
   items: [
-    { id: 'fair',     q: '這類報導是公正的。' },
-    { id: 'complete', q: '這類報導把事情交代得完整。' },
-    { id: 'accurate', q: '這類報導是準確的。' },
-    { id: 'trusted',  q: '這類報導可以信任。' },
+    { id: 'notice', q: '我讀新聞時，會在意撰稿記者是誰、有什麼背景。' },
+    { id: 'use',    q: '我會參考記者的資歷（學歷、得獎、經驗）來判斷一則新聞可不可信。' },
   ],
 };
 
-/* 對指派媒體的既有信任（控制 within-subject carry-over）：兩家各 1 題。{OUTLET} 動態替換。 */
+/* 對指派媒體的既有信任（between-subject 控制：受訪者整份固定一家）：該家 1 題。{OUTLET} 動態替換。 */
 const SCALE_OUTLET = {
   group: 'outlet', dim: '對該媒體既有信任', scale: LIKERT5, prefix: 'q_outlet_',
-  intro: '在參加這個研究之前，你對下列媒體的看法是：',
+  intro: '最後，關於你這次看到的這家媒體：',
   items: [
     { id: 'cred',  q: '整體而言，{OUTLET} 是可信的媒體。' },
   ],

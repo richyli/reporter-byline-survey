@@ -419,22 +419,21 @@ $('#btn-trial-next').onclick=()=>{
 function origChosenName(orig){ return orig.side==='L'?orig.nameA:orig.nameB; }
 
 /* ---- 量表 ----
- * 構念題 + marker 全域亂序（降題序效應），每題標 group/id 供分析還原。
- * within-subject：兩家媒體都出現過，故 outlet 既有信任題對「中央社」「三立新聞」各問一次（id 加媒體後綴）。
+ * 兩構面（對新聞普遍信任 + 是否在意記者資格，皆問受訪者自身傾向、永遠有對象）+ marker，全域亂序。
+ * between-subject：受訪者整份固定一家媒體，outlet 既有信任題只問「被分到的那一家」（如「我相信中央社」）。
  */
 function buildSurveyItems(){
   const flat=[];
-  [SCALE_EXPERTISE, SCALE_TRUST, MARKER].forEach(g=>{
+  [SCALE_NEWSTRUST, SCALE_CREDLOOK, MARKER].forEach(g=>{
     g.items.forEach(it=>{
       flat.push({ group:g.group, prefix:g.prefix, id:it.id, scale:g.scale, q: it.q });
     });
   });
-  // outlet 既有信任：每家各一組
-  OUTLETS.forEach(o=>{
-    SCALE_OUTLET.items.forEach(it=>{
-      flat.push({ group:'outlet', prefix:SCALE_OUTLET.prefix, id:it.id+'_'+o.key, scale:SCALE_OUTLET.scale,
-        q: it.q.replaceAll('{OUTLET}', o.name) });
-    });
+  // outlet 既有信任：只問受訪者被分到的那一家
+  const o = STATE.outlet;
+  SCALE_OUTLET.items.forEach(it=>{
+    flat.push({ group:'outlet', prefix:SCALE_OUTLET.prefix, id:it.id, scale:SCALE_OUTLET.scale,
+      q: it.q.replaceAll('{OUTLET}', o.name) });
   });
   return { items: shuffle(flat) };
 }
