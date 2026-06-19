@@ -193,22 +193,35 @@ if(!CONFIG_OK){ window.addEventListener('DOMContentLoaded', ()=>{
 }); }
 
 /* ---- 配對產生：7 屬性，minimal overlap + 互有勝負 ----
- * 規則（SoT §9）：左右至少 N-3 屬性不同（7 屬性→≥4，因 teach 僅 2 水準、放寬一格）；
- * 對「有序屬性」（award/tenure）要求互有勝負（A 至少一個有序屬性 > B、B 也至少一個 > A），
- * 排除一面倒 dominated。類別屬性（school/major/degree/teach/proauth）只計「不同」數。
+ * 規則（SoT §9）：左右至少 N-3 屬性不同（7 屬性→≥4）；
+ * 對「強度屬性」（cred 證照 / tenure 年資）要求互有勝負（A 至少一個 > B、B 也至少一個 > A），
+ * 排除一面倒 dominated。其餘類別屬性（school/major/degree/rank/beat）只計「不同」數。
+ * 另：年資×職級禁制組合（prohibited）+ 配對內長度匹配（字長差≤8、子句數相等）。
  */
-const ORDERED = ATTRS.filter(a=>a.ordered).map(a=>a.key);   // ['award','tenure']
+/* 強度屬性（供互有勝負/dominance）：證照 cred(1無<2高業<3分析師)、年資 tenure(1不提<2=3年<3=10年<4=20年)。
+ * tenure 在 config 標 ordered:false（含「不提」非純線性），但 idx 數值仍可作強度排序。 */
+const STRENGTH = ['cred','tenure'];
 const MIN_DIFF = ATTR_KEYS.length - 3;                       // 7-3 = 4
-function randProfile(){ const p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).idx; }); return p; }
+/* 年資×職級禁制組合（使用者/conjoint-expert 定）：太資淺不可能有資深頭銜、太資深不會掛資淺頭銜。
+ * tenure idx:1不提 2=3年 3=10年 4=20年 ; rank idx:1不提 2記者 3資深 4主編
+ * 禁制：3年×{資深,主編}、10年×主編、20年×記者。「不提年資」配任何職級皆合理。 */
+function prohibited(p){
+  const t=p.tenure, r=p.rank;
+  if(t===2 && (r===3||r===4)) return true;   // 3年 × 資深/主編
+  if(t===3 && r===4) return true;            // 10年 × 主編
+  if(t===4 && r===2) return true;            // 20年 × 記者
+  return false;
+}
+function randProfile(){ let p,g=0; do{ p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).idx; }); g++; }while(prohibited(p)&&g<200); return p; }
 function diffCount(A,B){ return ATTR_KEYS.reduce((n,k)=>n+(A[k]!==B[k]?1:0),0); }
-function orderedWins(A,B){ return ORDERED.some(k=>A[k]>B[k]); } // A 在某有序屬性嚴格大於 B
+function strengthWins(A,B){ return STRENGTH.some(k=>A[k]>B[k]); } // A 在某強度屬性嚴格大於 B
 function identical(A,B){ return ATTR_KEYS.every(k=>A[k]===B[k]); }
-/* 長度平衡：避免一卡長、一卡短誘發「選行數多的」count heuristic（使用者 2026-06-11）。
- * 「行數差」源於「子句數差」（卡寬固定，多一句常多一行），故約束改為**子句數完全相等**（差 0）
- * 並把字元長度差收到 ≤8，確保兩卡行數一致、不再出現「兩行 vs 三行」。
- * 可見子句數 = 學歷塊(永遠 1，major 必有) + 非「無」的 award/tenure/teach/proauth。
- * 代價：award/teach/proauth/school/degree 的「無/不提」需成對出現，略降該對比設計效率（可接受）。 */
-function visibleClauses(p){ let n=1; if(p.award!==1)n++; n++; if(p.teach!==1)n++; if(p.proauth!==1)n++; return n; }
+/* 長度平衡（配對內長度匹配，防 count heuristic + 防 attribute overlap 降 D-eff，conjoint_book §2.9）：
+ * 可見子句數 = 學歷塊(0/1) + 路線職級塊(0/1) + 非「無/不提」的 cred + 非「不提」的 tenure。子句數相等→行數一致。
+ * 只約束「子句數相等 + 字長差≤8」，不強制特定屬性成對不提（避免兩卡多屬性同時不提造成 overlap）。 */
+function eduVisible(p){ return buildEduChunk(p)?1:0; }
+function roleVisible(p){ return buildRoleChunk(p)?1:0; }
+function visibleClauses(p){ return eduVisible(p)+roleVisible(p)+(p.cred!==1?1:0)+(p.tenure!==1?1:0); }
 function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS).length; }
 function makePair(){
   let A,B,guard=0;
@@ -216,19 +229,22 @@ function makePair(){
   while(guard<15000 && (
     identical(A,B) ||
     diffCount(A,B) < MIN_DIFF ||
-    !orderedWins(A,B) || !orderedWins(B,A) ||
+    !strengthWins(A,B) || !strengthWins(B,A) ||
     visibleClauses(A) !== visibleClauses(B) ||              // 子句數完全相等 → 行數一致
-    Math.abs(bodyLen(A)-bodyLen(B)) > 8                     // 字元長度差 ≤8
+    Math.abs(bodyLen(A)-bodyLen(B)) > 8                     // 字元長度差 ≤8（配對內長度匹配）
   ));
   return Math.random()<.5 ? [A,B] : [B,A];
 }
-/* dominance holdout：一卡所有有序屬性皆 ≥、且至少一個 >，非有序屬性相同 → 理性必選優卡。
- * 作法：先讓 lo 的有序屬性都「不為最高」（≤2），再令 hi=lo+1，保證 hi 嚴格優於 lo。 */
+/* dominance holdout：一卡所有強度屬性皆 ≥、且至少一個 >，非強度屬性相同 → 理性必選優卡。
+ * 先讓 lo 的強度屬性「不為最高」，再令 hi=lo+1；需通過禁制檢查。 */
 function makeDominancePair(){
-  const lo=randProfile();
-  ORDERED.forEach(k=>{ if(lo[k]>=3) lo[k]=1+Math.floor(Math.random()*2); }); // 壓到 1 或 2
-  const hi={...lo};
-  ORDERED.forEach(k=>{ hi[k]=lo[k]+1; }); // 每個有序屬性都 +1 → hi 全面嚴格優
+  let lo,hi,g=0;
+  do{
+    lo=randProfile();
+    STRENGTH.forEach(k=>{ const mx=ATTRS.find(a=>a.key===k).levels.length; if(lo[k]>=mx) lo[k]=1+Math.floor(Math.random()*(mx-1)); });
+    hi={...lo}; STRENGTH.forEach(k=>{ hi[k]=lo[k]+1; }); // 每個強度屬性 +1 → hi 全面嚴格優
+    g++;
+  }while((prohibited(lo)||prohibited(hi))&&g<200);
   const winnerIsL = Math.random()<.5;
   return winnerIsL ? {pair:[hi,lo], winSide:'L'} : {pair:[lo,hi], winSide:'R'};
 }

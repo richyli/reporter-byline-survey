@@ -6,10 +6,11 @@
  * 情境：鎖定財經新聞。主選擇題：繼續閱讀意願。媒體脈絡 between-subject（中央社 vs 三立新聞）。
  */
 
-/* ---- 7 屬性。ordered=true 的有序屬性（award/tenure）idx 1<2<3 為遞增強度；
- *      其餘為類別屬性（idx 順序不影響分析）。
- *      label 供分析對照；token 供「學歷塊」組裝（school/major/degree）；
- *      phrase 供獨立子句（award/tenure/teach/proauth）。 ---- */
+/* ---- 7 屬性（財經情境 v2，全含「不提」＝揭露 vs 沉默框架）。
+ *      強度屬性 cred(證照) idx 1<2<3 遞增；tenure(年資) idx 1不提/2=3年/3=10年/4=20年。
+ *      label 供分析對照；token 供「學歷塊」(school/major/degree) 與「路線職級塊」(beat/rank) 組裝；
+ *      phrase 供獨立子句（cred/tenure）。
+ *      設計依據：study1_byline_content/design_memo_v2.md。 ---- */
 const ATTRS = [
   {
     key: 'school', name: '學校層級', ordered: false, chunk: 'edu',
@@ -22,9 +23,10 @@ const ATTRS = [
   {
     key: 'major', name: '科系背景', ordered: false, chunk: 'edu',
     levels: [
-      { idx: 1, label: '傳播', token: '傳播' },
-      { idx: 2, label: '中文', token: '中文' },
+      { idx: 1, label: '中文', token: '中文' },
+      { idx: 2, label: '新聞', token: '新聞' },
       { idx: 3, label: '企管', token: '企管' },
+      { idx: 4, label: '不提', token: null },            // 不提：學歷塊略去科系
     ],
   },
   {
@@ -36,40 +38,45 @@ const ATTRS = [
     ],
   },
   {
-    key: 'award', name: '得獎', ordered: true,
+    key: 'cred', name: '專業證照', ordered: true,
     levels: [
-      { idx: 1, label: '無',           phrase: null },                   // 略去
-      { idx: 2, label: '消費者權益獎',  phrase: '作品曾獲消費者權益獎' },
-      { idx: 3, label: '文化部金鼎獎',  phrase: '作品曾獲文化部金鼎獎' },
+      { idx: 1, label: '無',           phrase: null },                       // 略去
+      { idx: 2, label: '證券高級業務員', phrase: '具證券高級業務員資格' },
+      { idx: 3, label: '證券分析師',     phrase: '具證券投資分析師資格' },
     ],
   },
   {
-    key: 'tenure', name: '跨線年資', ordered: true,
+    key: 'tenure', name: '採訪年資', ordered: false,   // 含「不提」故非純有序；2/3/4 為 3<10<20 線性
     levels: [
-      { idx: 1, label: '資淺約2年',  phrase: '有 2 年採訪經驗' },
-      { idx: 2, label: '中堅約8年',  phrase: '有 8 年採訪經驗' },
-      { idx: 3, label: '資深約18年', phrase: '有 18 年採訪經驗' },
+      { idx: 1, label: '不提',  phrase: null },               // 略去
+      { idx: 2, label: '3年',   phrase: '採訪資歷3年' },
+      { idx: 3, label: '10年',  phrase: '採訪資歷10年' },
+      { idx: 4, label: '20年',  phrase: '採訪資歷20年' },
     ],
   },
   {
-    key: 'teach', name: '大學教職', ordered: false,
+    key: 'rank', name: '職級', ordered: false, chunk: 'role',   // 與 beat 黏成複合詞
     levels: [
-      { idx: 1, label: '無',     phrase: null },               // 略去
-      { idx: 2, label: '兼任講師', phrase: '並在大學兼任講師' },
+      { idx: 1, label: '不提',   token: null },
+      { idx: 2, label: '記者',   token: '記者' },
+      { idx: 3, label: '資深記者', token: '資深記者' },
+      { idx: 4, label: '主編',   token: '主編' },
     ],
   },
   {
-    key: 'proauth', name: '專業肯定', ordered: false,
+    key: 'beat', name: '關注路線', ordered: false, chunk: 'role',   // 與 rank 黏成複合詞
     levels: [
-      { idx: 1, label: '無',     phrase: null },                       // 略去
-      { idx: 2, label: '著書',   phrase: '著有《ETF 存股術》一書' },
-      { idx: 3, label: '分析師', phrase: '具證券投資分析師資格' },
+      { idx: 1, label: '不提', token: null },
+      { idx: 2, label: '金融', token: '金融' },
+      { idx: 3, label: '證券', token: '證券' },
+      { idx: 4, label: '產業', token: '產業' },
     ],
   },
 ];
 const ATTR_KEYS = ATTRS.map(a => a.key);
 const EDU_KEYS = ['school', 'major', 'degree'];          // 學歷塊內固定組裝順序
-const SOLO_KEYS = ['award', 'tenure', 'teach', 'proauth']; // 各自獨立子句
+const ROLE_KEYS = ['beat', 'rank'];                      // 路線×職級複合詞塊
+const SOLO_KEYS = ['cred', 'tenure'];                    // 各自獨立子句
 
 /* ---- 性別平衡的中性中文姓名池（姓名非屬性、不分析；只為讓句子像真實 byline） ---- */
 const NAME_POOL = [
@@ -109,13 +116,28 @@ function phraseOf(key, profile) {
  */
 function buildEduChunk(profile) {
   const sc = tokenOf('school', profile);  // 國立大學 / 私立大學 / null
-  const mj = tokenOf('major', profile);   // 傳播 / 中文 / 企管（必有）
+  const mj = tokenOf('major', profile);   // 中文 / 新聞 / 企管 / null（現可不提）
   const dg = tokenOf('degree', profile);  // 學士 / 碩士 / null
-  if (dg) return `擁有${(sc||'')}${(mj||'')}${dg}學位`;       // 有學位 → 「擁有…學位」
+  if (dg) return `擁有${(sc||'')}${(mj||'')}${dg}學位`;       // 有學位 → 「擁有…學位」(校/系任一可缺)
   if (sc && mj) return `${sc}${mj}系畢業`;                    // 有校有系無位
   if (sc) return `${sc}畢業`;                                 // 只有校
   if (mj) return `主修${mj}`;                                 // 只有系
   return null;                                               // 三者皆無
+}
+
+/* ---- 路線×職級複合詞（beat + rank 黏成一塊） ----
+ *   beat + rank  → 「<路線>組<職級>」     （金融組記者 / 證券組主編 / 產業組資深記者）
+ *   rank 不提，beat 有 → 「主跑<路線>」    （主跑金融）  ← 主跑＝路線單獨出現
+ *   beat 不提，rank 有 → 「<職級>」        （資深記者）
+ *   兩者皆不提 → null（此塊消失）
+ */
+function buildRoleChunk(profile) {
+  const bt = tokenOf('beat', profile);   // 金融 / 證券 / 產業 / null
+  const rk = tokenOf('rank', profile);   // 記者 / 資深記者 / 主編 / null
+  if (bt && rk) return `${bt}組${rk}`;
+  if (bt) return `主跑${bt}`;
+  if (rk) return rk;
+  return null;
 }
 
 /* ---- 整句組裝：學歷塊 + 4 個 solo 子句，以「塊」為單位依 chunkOrder 隨機排序 ----
@@ -126,22 +148,18 @@ function buildEduChunk(profile) {
 function buildSentenceBody(profile, chunkOrder) {
   const chunks = {};
   chunks.edu = buildEduChunk(profile);
-  SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });
+  chunks.role = buildRoleChunk(profile);
+  SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });   // cred / tenure
   // 依 chunkOrder 取出非空子句，並記住每個子句來自哪個塊
   const ordered = chunkOrder.map(c => ({ key: c, text: chunks[c] })).filter(o => o.text);
-  if (ordered.length) {
-    // 教職子句「並在大學兼任講師」以承接詞「並」開頭，若排在第一位（緊接姓名）會不通 →
-    // 當教職是首子句時去掉開頭的「並」（使用者 2026-06-11）。
-    if (ordered[0].key === 'teach') {
-      ordered[0].text = ordered[0].text.replace(/^並/, '');
-    }
-  }
-  const body = ordered.length ? ordered.map(o => o.text).join('，') : '資歷不詳';
-  return `，${body}。`;   // 前綴逗號接姓名，如「楊宜庭，擁有…，…。」
+  // 全不提（理論上不進正式配對，因互有勝負規則排除）→ 只顯示姓名，不寫「資歷不詳」避免像在標記受訪者
+  if (!ordered.length) return '。';
+  const body = ordered.map(o => o.text).join('，');
+  return `，${body}。`;   // 前綴逗號接姓名，如「林宇真，金融組記者，擁有國立大學企管碩士學位。」
 }
 
-/* 塊的識別碼（供受訪者內固定隨機順序）：edu 塊 + 4 solo */
-const CHUNK_KEYS = ['edu', ...SOLO_KEYS];
+/* 塊的識別碼（供受訪者內固定隨機順序）：edu 塊 + role 塊（路線職級）+ 2 solo（cred/tenure）*/
+const CHUNK_KEYS = ['edu', 'role', ...SOLO_KEYS];
 
 /* ---- 量表段 ---- */
 const LIKERT7 = ['1 非常不同意', '2', '3', '4 普通', '5', '6', '7 非常同意'];
@@ -215,6 +233,6 @@ const TASKS = {
 
 /* 設計參數 */
 const DESIGN = {
-  nTrialsPerTask: 6,  // 每個 DV 任務的正式對比題數（閱讀 6 + 警戒 6 = 12）
+  nTrialsPerTask: 8,  // 每個 DV 任務的正式對比題數（閱讀 8 + 不受市場利益 8 = 16）
   minAnswerSec: 3,    // 每題最短作答秒數（前端硬限制）
 };
