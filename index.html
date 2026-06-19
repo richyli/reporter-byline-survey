@@ -16,7 +16,7 @@
     --sel:#16140f;         /* 選中＝黑邊 */
     --selbg:#f0eee9;       /* 選中底（極淡灰）*/
     --accent:#8a1f1f;      /* 克制酒紅（僅用於極少數強調，如 trap）*/
-    --card-w:400px;
+    --card-w:560px;        /* 上下比較：卡片放寬，byline 盡量單行、長度差更不顯眼 */
     --serif:"Noto Serif TC","Source Han Serif TC","Songti TC","PMingLiU",Georgia,"Times New Roman",serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -52,9 +52,10 @@
   .trial-body{display:flex;flex-direction:column;gap:16px}
   .nextrow{display:flex;justify-content:center}
   .nextrow .btn{min-width:200px}
-  .pair{display:flex;gap:18px;justify-content:center;align-items:stretch;flex-wrap:nowrap}
+  /* 上下比較（桌機與手機皆同）：兩卡縱向堆疊、置中，方便上下對照閱讀 */
+  .pair{display:flex;flex-direction:column;gap:16px;justify-content:center;align-items:center}
   /* 文字卡：白紙黑字、細黑框、選中＝粗黑框 + 淡灰底（無光暈無位移）*/
-  .opt{flex:1 1 0;max-width:var(--card-w);border:1px solid var(--line);
+  .opt{width:100%;max-width:var(--card-w);border:1px solid var(--line);
     cursor:pointer;background:var(--paper);transition:.12s;position:relative;
     padding:22px 20px 20px;display:flex;flex-direction:column}
   .opt:hover{border-color:#9a958c}
@@ -64,7 +65,7 @@
   .opt.sel .lab{background:var(--ink);color:#fff;border-color:var(--ink)}
   .opt .chk{position:absolute;top:10px;right:12px;font-size:18px;font-weight:900;color:var(--ink);display:none}
   .opt.sel .chk{display:block}
-  .opt .byline{font-family:var(--serif);font-size:17px;line-height:1.95;color:var(--ink)}
+  .opt .byline{font-family:var(--serif);font-size:17px;line-height:1.7;color:var(--ink)}
   /* 姓名非屬性，淺灰低調不搶內文 */
   .opt .byname{font-weight:700;font-size:15px;color:#9a958c;letter-spacing:.5px}
   .scale{display:flex;gap:5px;justify-content:space-between}
