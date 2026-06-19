@@ -214,20 +214,22 @@ const DEMOG = [
 
 /* 雙 DV 任務定義。媒體 {OUTLET} 每題動態替換（within-subject：題內兩位同家、題間隨機）。
  * 題幹格式：「當你在<中央社/三立新聞>看到一則財經新聞報導時，哪一位記者會讓你<DV>？」 */
+/* 雙 DV ＝ source credibility 兩個核心可分離維度（Mayer et al. 1995；McCroskey 1981）：
+ *   DV1 read  → expertise（專業可信，能力面）
+ *   DV2 wary  → trustworthiness（誠信可信，品格面）
+ * task key 沿用 'read'/'wary' 不變動，避免 flatten 欄位連鎖更名。 */
 const TASKS = {
   read: {
-    key: 'read', dv: 'continue_reading', label: '繼續閱讀',
-    title: '繼續閱讀意願',
-    prompt: '當你在{OUTLET}看到一則財經新聞報導時，哪一位記者會讓你<b>更想繼續閱讀</b>？',
-    intro: '接下來，每題並排呈現兩位記者的簡介。請依第一直覺，選出<b>更想繼續閱讀</b>其報導的那一位。沒有對錯。',
+    key: 'read', dv: 'expertise', label: '更專業',
+    title: '專業可信（expertise）',
+    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者<b>看起來更專業</b>？',
+    intro: '接下來，每題上下呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>看起來更專業</b>的那一位。沒有對錯。',
   },
-  // 第二個 DV（探索性、正面措辭）：不受市場利益影響。task key 仍沿用 'wary' 不變動，避免欄位連鎖更名。
   wary: {
-    key: 'wary', dv: 'market_independence', label: '不受市場利益影響',
-    title: '不受市場利益影響',
-    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者<b>更不會被市場利益影響</b>、報導比較中立可信？',
-    intro: '接下來，每題並排呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>更不會被市場利益影響</b>、報導比較中立可信的那一位。沒有對錯。',
-    exploratory: true,   // 無客觀正解，dominance holdout 不作 pass 判定
+    key: 'wary', dv: 'trustworthiness', label: '更可信',
+    title: '誠信可信（trustworthiness）',
+    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者的<b>報導更可信</b>？',
+    intro: '接下來，每題上下呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>報導更可信</b>的那一位。沒有對錯。',
   },
 };
 

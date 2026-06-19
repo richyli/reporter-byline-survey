@@ -311,8 +311,8 @@ $('#btn-intro-next').onclick = ()=>{
   STATE.chunkOrder = shuffle(CHUNK_KEYS);
   // between-subject 媒體：整份固定一家（進場隨機分派，全程不變）
   STATE.outlet = rand(OUTLETS);
-  // 雙 DV 任務順序 counterbalance（pid 末碼）
-  const flip = (STATE.pid.charCodeAt(STATE.pid.length-1) % 2) === 0;
+  // 雙 DV 任務順序隨機（使用者 2026-06-20 指定；每位受訪者隨機決定 read/wary 先後）
+  const flip = Math.random() < 0.5;
   STATE.taskOrder = flip ? ['wary','read'] : ['read','wary'];
   buildSequence();
   STATE.taskStarts = {};
