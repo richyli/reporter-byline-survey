@@ -63,6 +63,7 @@
   .opt .lab{position:absolute;top:-11px;left:18px;background:var(--paper);color:var(--ink);
     font-family:var(--serif);font-size:13px;font-weight:700;padding:1px 10px;letter-spacing:1px;border:1px solid var(--line)}
   .opt.sel .lab{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .opt .lab.trap{background:var(--accent);color:#fff;border-color:var(--accent);white-space:nowrap;animation:flash 1s linear infinite}
   .opt .chk{position:absolute;top:10px;right:12px;font-size:18px;font-weight:900;color:var(--ink);display:none}
   .opt.sel .chk{display:block}
   .opt .byline{font-family:var(--serif);font-size:17px;line-height:1.7;color:var(--ink)}
@@ -103,12 +104,11 @@
 
 <!-- 1. 研究說明（正式版首頁） -->
 <section id="screen-intro" class="panel">
-  <div class="masthead">記者署名與財經新聞</div>
-  <h1>研究說明</h1>
-  <p>請想像你正在閱讀<b>財經新聞</b>。每則報導的署名（byline）會附上撰稿記者的簡短資歷介紹；題幹會標明這是<b>中央社</b>或<b>三立新聞</b>的報導。</p>
-  <p>本研究分兩部分，每題並排呈現<b>兩位記者</b>的資歷簡介，請依你的<b>第一直覺</b>作答。沒有對錯，約 6–10 分鐘。</p>
-  <p class="small">本研究使用虛構記者，姓名與資歷組合皆為隨機產生，與真實人物無關；作答匿名，僅供學術研究。</p>
-  <button class="btn" id="btn-intro-next">開始作答</button>
+  <div class="masthead">記者署名研究</div>
+  <p>接下來請想像你正在網路上閱讀一則財經新聞，在報導的標題與內文中間你會看到記者的署名與簡介。</p>
+  <p>本研究分兩部分，每題<b>上下呈現</b>兩位虛構的記者資歷簡介，請依你的<b>第一直覺</b>作答最適合的，沒有對錯，整個研究只要大約 4 分鐘。</p>
+  <p class="small">本研究使用虛構記者，姓名與資歷組合皆為隨機產生，與真實人物無關；作答匿名，不收集個人姓名與聯絡方式，僅供學術研究，分析時也不會以個人為分析單位。您可以隨時退出。</p>
+  <button class="btn" id="btn-intro-next">我同意開始研究</button>
   <div class="sig">政大新聞　李怡志</div>
 </section>
 
@@ -361,11 +361,18 @@ function showItem(){
   STATE.current = { ...item, chosenSide:null };
   const outlet = item.outlet.name;
   const t = TASKS[item.task];
+  // 還原卡片標籤（非 trap 一律純 A/B）
+  $('#opt-L .lab').textContent='A'; $('#opt-R .lab').textContent='B';
+  $('#opt-L .lab').classList.remove('trap'); $('#opt-R .lab').classList.remove('trap');
   if(item.kind==='trap'){
     const sideLabel = item.expectSide==='L' ? 'A' : 'B';
     $('#trial-prompt').innerHTML = `【注意力檢查】本題不需比較，請直接點選標示「${sideLabel}」的那一張卡片。`;
     $('#trial-prompt').classList.add('trap');
     $('#trial-counter').textContent = '注意力檢查';
+    // 警語同時出現在按鈕（目標卡標籤）上
+    const tgt = item.expectSide==='L' ? '#opt-L .lab' : '#opt-R .lab';
+    $(tgt).textContent = `${sideLabel}　← 請點這張`;
+    $(tgt).classList.add('trap');
   } else {
     $('#trial-prompt').innerHTML = t.prompt.replaceAll('{OUTLET}', outlet);
     $('#trial-prompt').classList.remove('trap');
