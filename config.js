@@ -21,12 +21,11 @@ const ATTRS = [
     ],
   },
   {
-    key: 'major', name: '科系背景', ordered: false, chunk: 'edu',
+    key: 'major', name: '科系背景', ordered: false, chunk: 'edu',  // 砍中文(2026-06-20 減參數)：新聞=本科、企管=財經對口
     levels: [
-      { idx: 1, label: '中文', token: '中文' },
-      { idx: 2, label: '新聞', token: '新聞' },
-      { idx: 3, label: '企管', token: '企管' },
-      { idx: 4, label: '不提', token: null },            // 不提：學歷塊略去科系
+      { idx: 1, label: '新聞', token: '新聞' },
+      { idx: 2, label: '企管', token: '企管' },
+      { idx: 3, label: '不提', token: null },            // 不提：學歷塊略去科系
     ],
   },
   {
@@ -55,21 +54,19 @@ const ATTRS = [
     ],
   },
   {
-    key: 'rank', name: '職級', ordered: false, chunk: 'role',   // 與 beat 黏成複合詞
+    key: 'rank', name: '職級', ordered: false, chunk: 'role',   // 與 beat 黏成複合詞；砍主編(2026-06-20 減參數)
     levels: [
       { idx: 1, label: '不提',   token: null },
       { idx: 2, label: '記者',   token: '記者' },
       { idx: 3, label: '資深記者', token: '資深記者' },
-      { idx: 4, label: '主編',   token: '主編' },
     ],
   },
   {
-    key: 'beat', name: '關注路線', ordered: false, chunk: 'role',   // 與 rank 黏成複合詞
+    key: 'beat', name: '關注路線', ordered: false, chunk: 'role',   // 與 rank 黏成複合詞；砍金融(2026-06-20 減參數)
     levels: [
       { idx: 1, label: '不提', token: null },
-      { idx: 2, label: '金融', token: '金融' },
-      { idx: 3, label: '證券', token: '證券' },
-      { idx: 4, label: '產業', token: '產業' },
+      { idx: 2, label: '證券', token: '證券' },
+      { idx: 3, label: '產業', token: '產業' },
     ],
   },
 ];
@@ -235,6 +232,9 @@ const TASKS = {
 
 /* 設計參數 */
 const DESIGN = {
-  nTrialsPerTask: 8,  // 每個 DV 任務的正式對比題數（閱讀 8 + 不受市場利益 8 = 16）
-  minAnswerSec: 3,    // 每題最短作答秒數（前端硬限制）
+  nTrialsPerTask: 10,   // 每 DV 正式對比題數（雙 DV 共 20）
+  nMatched: 6,          // 其中「長度匹配組」題數（兩卡等長→純內容 part-worth）
+  nFree: 4,             // 「長度不限組」題數（兩卡長度不限→捕捉長度/揭露數效果）
+  minAnswerSec: 3,      // 每題最短作答秒數（前端硬限制）
+  // 品質題分散：DV1(read)放 trap、DV2(wary)放 repeat、不放 dominance（使用者 2026-06-20）
 };
