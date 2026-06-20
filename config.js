@@ -37,11 +37,17 @@ const ATTRS = [
     ],
   },
   {
+    /* 證照 cred：水準不變(無/高業/分析師)，但每水準有多種「同義不同長度」措辭版本（長→短）。
+     * 僅供『長度匹配組(matched)』微調整卡總長，幫兩卡更精準等長。版本選擇純為長度服務、
+     * 不進設計矩陣（part-worth 只對應水準 idx），故不洩漏資訊、不影響估計。
+     * phrase = 預設(最長正式版)；phraseVariants = 由長到短可替換版本。 */
     key: 'cred', name: '專業證照', ordered: true,
     levels: [
-      { idx: 1, label: '無',           phrase: null },                       // 略去
-      { idx: 2, label: '證券高級業務員', phrase: '具證券高級業務員資格' },
-      { idx: 3, label: '證券分析師',     phrase: '具證券投資分析師資格' },
+      { idx: 1, label: '無', phrase: null, phraseVariants: [] },             // 略去
+      { idx: 2, label: '證券高級業務員', phrase: '具證券高級業務員資格',
+        phraseVariants: ['具證券高級業務員資格','證券高級業務員資格','證券高級業務員','證券高業'] },
+      { idx: 3, label: '證券分析師', phrase: '具證券投資分析師資格',
+        phraseVariants: ['具證券投資分析師資格','證券投資分析師資格','證券投資分析師','證券分析師'] },
     ],
   },
   {
@@ -142,11 +148,23 @@ function buildRoleChunk(profile) {
  * chunkOrder：受訪者內固定的「塊順序」（每位受訪者進場 shuffle 一次）。
  * 返回 body（不含姓名），由 index.html 在前面加姓名。
  */
-function buildSentenceBody(profile, chunkOrder) {
+/* 取證照片語的指定長度版本（vi=版本索引，0=最長…末=最短；超界自動夾住）。
+ * 僅 matched 組微調長度用；不指定(vi=null)時回預設 phrase（最長正式版）。 */
+function credPhrase(profile, vi) {
+  const attr = ATTRS.find(a => a.key === 'cred');
+  const lv = attr.levels.find(l => l.idx === profile.cred);
+  if (!lv || !lv.phrase) return null;
+  if (vi == null || !lv.phraseVariants || !lv.phraseVariants.length) return lv.phrase;
+  const i = Math.max(0, Math.min(vi, lv.phraseVariants.length - 1));
+  return lv.phraseVariants[i];
+}
+/* credVariant：matched 組微調證照長度版本（null=預設最長）。 */
+function buildSentenceBody(profile, chunkOrder, credVariant) {
   const chunks = {};
   chunks.edu = buildEduChunk(profile);
   chunks.role = buildRoleChunk(profile);
   SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });   // cred / tenure
+  if (credVariant != null) chunks.cred = credPhrase(profile, credVariant);  // 覆寫證照為指定長度版本
   // 依 chunkOrder 取出非空子句，並記住每個子句來自哪個塊
   const ordered = chunkOrder.map(c => ({ key: c, text: chunks[c] })).filter(o => o.text);
   // 全不提（理論上不進正式配對，因互有勝負規則排除）→ 只顯示姓名，不寫「資歷不詳」避免像在標記受訪者

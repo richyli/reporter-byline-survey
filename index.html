@@ -16,7 +16,7 @@
     --sel:#16140f;         /* 選中＝黑邊 */
     --selbg:#f0eee9;       /* 選中底（極淡灰）*/
     --accent:#8a1f1f;      /* 克制酒紅（僅用於極少數強調，如 trap）*/
-    --card-w:560px;        /* 上下比較：卡片放寬，byline 盡量單行、長度差更不顯眼 */
+    --card-w:820px;        /* 上下比較：卡片加寬到桌機大部分 byline 單行不斷行（約容 45 字）；手機仍 100% 縮 */
     --serif:"Noto Serif TC","Source Han Serif TC","Songti TC","PMingLiU",Georgia,"Times New Roman",serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -55,7 +55,7 @@
   /* 上下比較（桌機與手機皆同）：兩卡縱向堆疊、置中，方便上下對照閱讀 */
   .pair{display:flex;flex-direction:column;gap:16px;justify-content:center;align-items:center}
   /* 文字卡：白紙黑字、細黑框、選中＝粗黑框 + 淡灰底（無光暈無位移）*/
-  .opt{width:100%;max-width:var(--card-w);border:1px solid var(--line);
+  .opt{width:100%;max-width:min(var(--card-w),94vw);border:1px solid var(--line);
     cursor:pointer;background:var(--paper);transition:.12s;position:relative;
     padding:22px 20px 20px;display:flex;flex-direction:column}
   .opt:hover{border-color:#9a958c}
@@ -222,18 +222,29 @@ function identical(A,B){ return ATTR_KEYS.every(k=>A[k]===B[k]); }
 function eduVisible(p){ return buildEduChunk(p)?1:0; }
 function roleVisible(p){ return buildRoleChunk(p)?1:0; }
 function visibleClauses(p){ return eduVisible(p)+roleVisible(p)+(p.cred!==1?1:0)+(p.tenure!==1?1:0); }
-function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS).length; }
-/* 長度匹配組：兩卡等長（子句數相等 + 字長差≤8）→ 估純內容 part-worth（不受長度污染）。 */
+function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS, p.credVar).length; }   // 帶證照長度版本
+/* 證照長度微調：兩卡都有證照(cred≠1)時，搜尋兩卡 credVar 版本組合使字長差最小，存進 .credVar。
+ * 證照版本純為長度服務、不進設計矩陣（part-worth 只對應 cred 水準 idx），不洩漏資訊。 */
+function tuneCredLen(A,B){
+  const nV = k => { const lv=ATTRS.find(a=>a.key==='cred').levels.find(l=>l.idx===k); return (lv&&lv.phraseVariants&&lv.phraseVariants.length)||1; };
+  let best=null, bestDiff=Infinity;
+  for(let i=0;i<nV(A.cred);i++) for(let j=0;j<nV(B.cred);j++){
+    A.credVar=i; B.credVar=j;
+    const d=Math.abs(bodyLen(A)-bodyLen(B));
+    if(d<bestDiff){ bestDiff=d; best=[i,j]; }
+  }
+  if(best){ A.credVar=best[0]; B.credVar=best[1]; }
+  return bestDiff;
+}
+/* 長度匹配組：兩卡等長（子句數相等 + 字長差≤8，必要時用證照版本微調）→ 估純內容 part-worth。 */
 function makePairMatched(){
   let A,B,guard=0;
-  do{ A=randProfile(); B=randProfile(); guard++; }
-  while(guard<15000 && (
-    identical(A,B) ||
-    diffCount(A,B) < MIN_DIFF ||
-    !strengthWins(A,B) || !strengthWins(B,A) ||
-    visibleClauses(A) !== visibleClauses(B) ||              // 子句數相等 → 行數一致
-    Math.abs(bodyLen(A)-bodyLen(B)) > 8                     // 字長差≤8
-  ));
+  do{
+    A=randProfile(); B=randProfile(); A.credVar=null; B.credVar=null; guard++;
+    if(identical(A,B) || diffCount(A,B)<MIN_DIFF || !strengthWins(A,B) || !strengthWins(B,A) || visibleClauses(A)!==visibleClauses(B)) continue;
+    tuneCredLen(A,B);                                       // 證照版本微調縮小長度差
+    if(Math.abs(bodyLen(A)-bodyLen(B))<=8) break;           // 微調後仍須 ≤8
+  } while(guard<15000);
   return Math.random()<.5 ? [A,B] : [B,A];
 }
 /* 長度不限組：不約束長度/子句數 → 故意製造長短差，捕捉「長>短(揭露多寡)」效果。
@@ -361,8 +372,8 @@ function showItem(){
     $('#trial-counter').textContent = t.title;
   }
   // 渲染敘述句：姓名粗體 + 學歷塊與 solo 子句依 chunkOrder 排序
-  $('#by-L').innerHTML = `<span class="byname">${item.nameA}</span>` + buildSentenceBody(item.A, STATE.chunkOrder);
-  $('#by-R').innerHTML = `<span class="byname">${item.nameB}</span>` + buildSentenceBody(item.B, STATE.chunkOrder);
+  $('#by-L').innerHTML = `<span class="byname">${item.nameA}</span>` + buildSentenceBody(item.A, STATE.chunkOrder, item.A.credVar);
+  $('#by-R').innerHTML = `<span class="byname">${item.nameB}</span>` + buildSentenceBody(item.B, STATE.chunkOrder, item.B.credVar);
   $('#opt-L').classList.remove('sel'); $('#opt-R').classList.remove('sel');
   $('#btn-trial-next').disabled = true;
   if(STATE.gateTimer){ clearInterval(STATE.gateTimer); STATE.gateTimer=null; }
