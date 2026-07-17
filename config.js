@@ -21,14 +21,8 @@ const ATTRS = [
     ],
   },
   {
-    key: 'major', name: '科系背景', ordered: false, chunk: 'edu',  // 砍中文(2026-06-20 減參數)：新聞=本科、企管=財經對口
-    levels: [
-      { idx: 1, label: '新聞', token: '新聞' },
-      { idx: 2, label: '企管', token: '企管' },
-      { idx: 3, label: '不提', token: null },            // 不提：學歷塊略去科系
-    ],
-  },
-  {
+    // 科系(major)已於 2026-07-17 定稿砍除：Study 1 共線盤點顯示科系×學科領域 phi=.93、×學校.88 是學歷冗餘；
+    // wiki 文獻無支持科系別是可信度信號（Spence 談學位層級非科系）；對口功能由 beat 承載。詳見 study2_attribute_final.md。
     key: 'degree', name: '學位', ordered: false, chunk: 'edu',
     levels: [
       { idx: 1, label: '學士', token: '學士' },
@@ -75,11 +69,26 @@ const ATTRS = [
       { idx: 3, label: '產業', token: '產業' },
     ],
   },
+  {
+    /* 得獎 award（2026-07-17 加入）：個人歸屬、有序（不提<國內<國外，稀缺/成本遞增）。
+     * 獨立 solo 子句（放法 A），句尾亮點；加入 STRENGTH（互有勝負/dominance）。
+     * 三水準用「國內/國外」而非等級高低——一般讀者分不出國內獎等級，但國內vs國外可辨識（Spence 相關性條件）。
+     * 泛稱措辭，不鎖具體獎名，避免受訪者對特定獎的認知差異。真實案例：SOPA=國外；卓越/金鼎=國內。
+     * phraseVariants 供長度微調（同 cred 機制）。詳見 study2_attribute_final.md §二決策4。 */
+    key: 'award', name: '得獎', ordered: true,
+    levels: [
+      { idx: 1, label: '不提', phrase: null, phraseVariants: [] },                 // 略去
+      { idx: 2, label: '國內新聞獎', phrase: '曾獲國內新聞獎',
+        phraseVariants: ['曾獲國內新聞獎', '獲國內新聞獎', '得過國內新聞獎'] },
+      { idx: 3, label: '國外新聞獎', phrase: '曾獲國外新聞獎',
+        phraseVariants: ['曾獲國外新聞獎', '獲國外新聞獎', '得過國外新聞獎'] },
+    ],
+  },
 ];
 const ATTR_KEYS = ATTRS.map(a => a.key);
-const EDU_KEYS = ['school', 'major', 'degree'];          // 學歷塊內固定組裝順序
+const EDU_KEYS = ['school', 'degree'];                   // 學歷塊內固定組裝順序（科系 major 已砍）
 const ROLE_KEYS = ['beat', 'rank'];                      // 路線×職級複合詞塊
-const SOLO_KEYS = ['cred', 'tenure'];                    // 各自獨立子句
+const SOLO_KEYS = ['cred', 'tenure', 'award'];           // 各自獨立子句（award 2026-07-17 加入）
 
 /* ---- 性別平衡的中性中文姓名池（姓名非屬性、不分析；只為讓句子像真實 byline） ---- */
 const NAME_POOL = [
@@ -106,26 +115,20 @@ function phraseOf(key, profile) {
   return lv ? lv.phrase : null;
 }
 
-/* ---- 學歷塊智慧組裝（school + major + degree，只留「有提」的細項） ----
- * 規則（依細項是否「不提」決定措辭；「擁有…學位」/「主修…」自然混用）：
- *   school + major + degree  → 擁有<校><系><位>學位         （如：擁有國立大學中文碩士學位）
- *   major  + degree（無校）   → 擁有<系><位>學位             （如：擁有中文碩士學位）
- *   school + major（無位）    → <校><系>系畢業               （如：國立大學中文系畢業）
- *   school + degree（無系）   → 擁有<校><位>學位             （如：擁有國立大學碩士學位）
- *   只有 degree              → 擁有<位>學位                 （如：擁有碩士學位）
- *   只有 school              → <校>畢業                     （如：國立大學畢業）
- *   只有 major               → 主修<系>                     （如：主修中文）
- *   三者皆不提               → null（學歷塊整個消失）
+/* ---- 學歷塊智慧組裝（school + degree，只留「有提」的細項；科系 major 2026-07-17 已砍） ----
+ * 規則（依細項是否「不提」決定措辭）：
+ *   school + degree  → 擁有<校><位>學位             （如：擁有國立大學碩士學位）
+ *   只有 degree      → 擁有<位>學位                 （如：擁有碩士學位）
+ *   只有 school      → <校>畢業                     （如：國立大學畢業）
+ *   兩者皆不提       → null（學歷塊整個消失）
+ * 註：拆 school+degree 兩獨立屬性（正交可估純校級/純學位效果），但呈現仍黏成一句學歷塊自然表述。
  */
 function buildEduChunk(profile) {
   const sc = tokenOf('school', profile);  // 國立大學 / 私立大學 / null
-  const mj = tokenOf('major', profile);   // 中文 / 新聞 / 企管 / null（現可不提）
   const dg = tokenOf('degree', profile);  // 學士 / 碩士 / null
-  if (dg) return `擁有${(sc||'')}${(mj||'')}${dg}學位`;       // 有學位 → 「擁有…學位」(校/系任一可缺)
-  if (sc && mj) return `${sc}${mj}系畢業`;                    // 有校有系無位
+  if (dg) return `擁有${(sc||'')}${dg}學位`;                  // 有學位 → 「擁有…學位」(校可缺)
   if (sc) return `${sc}畢業`;                                 // 只有校
-  if (mj) return `主修${mj}`;                                 // 只有系
-  return null;                                               // 三者皆無
+  return null;                                               // 兩者皆無
 }
 
 /* ---- 路線×職級複合詞（beat + rank 黏成一塊） ----
@@ -148,32 +151,36 @@ function buildRoleChunk(profile) {
  * chunkOrder：受訪者內固定的「塊順序」（每位受訪者進場 shuffle 一次）。
  * 返回 body（不含姓名），由 index.html 在前面加姓名。
  */
-/* 取證照片語的指定長度版本（vi=版本索引，0=最長…末=最短；超界自動夾住）。
+/* 取指定屬性片語的長度版本（vi=版本索引，0=最長…末=最短；超界自動夾住）。
+ * 適用有 phraseVariants 的 solo 屬性（cred 證照 / award 得獎）。
  * 僅 matched 組微調長度用；不指定(vi=null)時回預設 phrase（最長正式版）。 */
-function credPhrase(profile, vi) {
-  const attr = ATTRS.find(a => a.key === 'cred');
-  const lv = attr.levels.find(l => l.idx === profile.cred);
+function variantPhrase(profile, key, vi) {
+  const attr = ATTRS.find(a => a.key === key);
+  const lv = attr.levels.find(l => l.idx === profile[key]);
   if (!lv || !lv.phrase) return null;
   if (vi == null || !lv.phraseVariants || !lv.phraseVariants.length) return lv.phrase;
   const i = Math.max(0, Math.min(vi, lv.phraseVariants.length - 1));
   return lv.phraseVariants[i];
 }
-/* credVariant：matched 組微調證照長度版本（null=預設最長）。 */
-function buildSentenceBody(profile, chunkOrder, credVariant) {
+/* 相容舊呼叫名 */
+function credPhrase(profile, vi) { return variantPhrase(profile, 'cred', vi); }
+/* credVariant / awardVariant：matched 組微調證照與得獎的長度版本（null=預設最長）。 */
+function buildSentenceBody(profile, chunkOrder, credVariant, awardVariant) {
   const chunks = {};
   chunks.edu = buildEduChunk(profile);
   chunks.role = buildRoleChunk(profile);
-  SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });   // cred / tenure
-  if (credVariant != null) chunks.cred = credPhrase(profile, credVariant);  // 覆寫證照為指定長度版本
+  SOLO_KEYS.forEach(k => { chunks[k] = phraseOf(k, profile); });   // cred / tenure / award
+  if (credVariant != null) chunks.cred = variantPhrase(profile, 'cred', credVariant);    // 覆寫證照長度版本
+  if (awardVariant != null) chunks.award = variantPhrase(profile, 'award', awardVariant); // 覆寫得獎長度版本
   // 依 chunkOrder 取出非空子句，並記住每個子句來自哪個塊
   const ordered = chunkOrder.map(c => ({ key: c, text: chunks[c] })).filter(o => o.text);
   // 全不提（理論上不進正式配對，因互有勝負規則排除）→ 只顯示姓名，不寫「資歷不詳」避免像在標記受訪者
   if (!ordered.length) return '。';
   const body = ordered.map(o => o.text).join('，');
-  return `，${body}。`;   // 前綴逗號接姓名，如「林宇真，金融組記者，擁有國立大學企管碩士學位。」
+  return `，${body}。`;   // 前綴逗號接姓名，如「林宇真，證券組記者，擁有國立大學碩士學位，曾獲國內新聞獎。」
 }
 
-/* 塊的識別碼（供受訪者內固定隨機順序）：edu 塊 + role 塊（路線職級）+ 2 solo（cred/tenure）*/
+/* 塊的識別碼（供受訪者內固定隨機順序）：edu 塊 + role 塊（路線職級）+ 3 solo（cred/tenure/award）*/
 const CHUNK_KEYS = ['edu', 'role', ...SOLO_KEYS];
 
 /* ---- 量表段 ---- */

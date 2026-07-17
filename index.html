@@ -193,15 +193,16 @@ if(!CONFIG_OK){ window.addEventListener('DOMContentLoaded', ()=>{
   if(box){ box.style.display='block'; box.textContent='⚠ 設定檔（config.js）未載入，請重新整理頁面（Ctrl/⌘+Shift+R 強制重載）。若持續發生請回報。'; }
 }); }
 
-/* ---- 配對產生：7 屬性，minimal overlap + 互有勝負 ----
- * 規則（SoT §9）：左右至少 N-3 屬性不同（7 屬性→≥4）；
- * 對「強度屬性」（cred 證照 / tenure 年資）要求互有勝負（A 至少一個 > B、B 也至少一個 > A），
- * 排除一面倒 dominated。其餘類別屬性（school/major/degree/rank/beat）只計「不同」數。
+/* ---- 配對產生：7 屬性（school/degree/tenure/rank/cred/beat/award，2026-07-17 定稿）----
+ * minimal overlap + 互有勝負。規則（SoT §9）：左右至少 N-3 屬性不同（7 屬性→≥4）；
+ * 對「強度屬性」（cred 證照 / tenure 年資 / award 得獎）要求互有勝負（A 至少一個 > B、B 也至少一個 > A），
+ * 排除一面倒 dominated。其餘類別屬性（school/degree/rank/beat）只計「不同」數。
  * 另：年資×職級禁制組合（prohibited）+ 配對內長度匹配（字長差≤8、子句數相等）。
  */
-/* 強度屬性（供互有勝負/dominance）：證照 cred(1無<2高業<3分析師)、年資 tenure(1不提<2=3年<3=10年<4=20年)。
- * tenure 在 config 標 ordered:false（含「不提」非純線性），但 idx 數值仍可作強度排序。 */
-const STRENGTH = ['cred','tenure'];
+/* 強度屬性（供互有勝負/dominance，皆為信號成本軸有序屬性）：
+ *   證照 cred(1無<2高業<3分析師)、年資 tenure(1不提<2=3年<3=10年<4=20年)、得獎 award(1不提<2國內<3國外)。
+ * ordered idx 數值作強度排序（含「不提」非純線性但 idx 可比）。award 2026-07-17 加入。 */
+const STRENGTH = ['cred','tenure','award'];
 const MIN_DIFF = ATTR_KEYS.length - 3;                       // 7-3 = 4
 /* 年資×職級禁制組合（使用者/conjoint-expert 定）：太資淺不可能有資深頭銜、太資深不會掛資淺頭銜。
  * tenure idx:1不提 2=3年 3=10年 4=20年 ; rank idx:1不提 2記者 3資深（砍主編 2026-06-20）
@@ -212,52 +213,67 @@ function prohibited(p){
   if(t===4 && r===2) return true;   // 20年 × 記者
   return false;
 }
-function randProfile(){ let p,g=0; do{ p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).idx; }); g++; }while(prohibited(p)&&g<200); return p; }
+/* 「不提」數量上限（使用者 2026-07-17）：每張卡最多 3 項不提，保證至少揭露 4/7 項資歷，
+ * 避免出現幾乎空白的卡（原模擬最多可不提 5 項、平均 2.28）。
+ * 各屬性的「不提」水準 idx：school=3, degree=3, cred=1, tenure=1, rank=1, beat=1, award=1 */
+const OMIT_IDX = { school:3, degree:3, cred:1, tenure:1, rank:1, beat:1, award:1 };
+const MAX_OMIT = 3;
+function nOmitted(p){ return ATTR_KEYS.reduce((n,k)=>n+(p[k]===OMIT_IDX[k]?1:0),0); }
+function tooEmpty(p){ return nOmitted(p) > MAX_OMIT; }
+function randProfile(){ let p,g=0; do{ p={}; ATTRS.forEach(a=>{ p[a.key]=rand(a.levels).idx; }); g++; }while((prohibited(p)||tooEmpty(p))&&g<500); return p; }
 function diffCount(A,B){ return ATTR_KEYS.reduce((n,k)=>n+(A[k]!==B[k]?1:0),0); }
 function strengthWins(A,B){ return STRENGTH.some(k=>A[k]>B[k]); } // A 在某強度屬性嚴格大於 B
 function identical(A,B){ return ATTR_KEYS.every(k=>A[k]===B[k]); }
 /* 長度平衡（配對內長度匹配，防 count heuristic + 防 attribute overlap 降 D-eff，conjoint_book §2.9）：
- * 可見子句數 = 學歷塊(0/1) + 路線職級塊(0/1) + 非「無/不提」的 cred + 非「不提」的 tenure。子句數相等→行數一致。
+ * 可見子句數 = 學歷塊(0/1) + 路線職級塊(0/1) + 非「不提」的 cred + tenure + award。子句數相等→行數一致。
  * 只約束「子句數相等 + 字長差≤8」，不強制特定屬性成對不提（避免兩卡多屬性同時不提造成 overlap）。 */
 function eduVisible(p){ return buildEduChunk(p)?1:0; }
 function roleVisible(p){ return buildRoleChunk(p)?1:0; }
-function visibleClauses(p){ return eduVisible(p)+roleVisible(p)+(p.cred!==1?1:0)+(p.tenure!==1?1:0); }
-function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS, p.credVar).length; }   // 帶證照長度版本
-/* 證照長度微調：兩卡都有證照(cred≠1)時，搜尋兩卡 credVar 版本組合使字長差最小，存進 .credVar。
- * 證照版本純為長度服務、不進設計矩陣（part-worth 只對應 cred 水準 idx），不洩漏資訊。 */
+function visibleClauses(p){ return eduVisible(p)+roleVisible(p)+(p.cred!==1?1:0)+(p.tenure!==1?1:0)+(p.award!==1?1:0); }
+function bodyLen(p){ return buildSentenceBody(p, CHUNK_KEYS, p.credVar, p.awardVar).length; }  // 帶證照/得獎長度版本
+/* solo 子句長度微調：cred 與 award 皆有 phraseVariants（同義不同長度）。
+ * 搜尋兩卡的 credVar × awardVar 版本組合使字長差最小，存進 .credVar / .awardVar。
+ * 版本純為長度服務、不進設計矩陣（part-worth 只對應水準 idx），不洩漏資訊。 */
+function nVariants(key, idx){
+  const lv = ATTRS.find(a=>a.key===key).levels.find(l=>l.idx===idx);
+  return (lv && lv.phraseVariants && lv.phraseVariants.length) || 1;
+}
 function tuneCredLen(A,B){
-  const nV = k => { const lv=ATTRS.find(a=>a.key==='cred').levels.find(l=>l.idx===k); return (lv&&lv.phraseVariants&&lv.phraseVariants.length)||1; };
   let best=null, bestDiff=Infinity;
-  for(let i=0;i<nV(A.cred);i++) for(let j=0;j<nV(B.cred);j++){
-    A.credVar=i; B.credVar=j;
+  for(let i=0;i<nVariants('cred',A.cred);i++) for(let j=0;j<nVariants('cred',B.cred);j++)
+  for(let m=0;m<nVariants('award',A.award);m++) for(let n=0;n<nVariants('award',B.award);n++){
+    A.credVar=i; B.credVar=j; A.awardVar=m; B.awardVar=n;
     const d=Math.abs(bodyLen(A)-bodyLen(B));
-    if(d<bestDiff){ bestDiff=d; best=[i,j]; }
+    if(d<bestDiff){ bestDiff=d; best=[i,j,m,n]; }
   }
-  if(best){ A.credVar=best[0]; B.credVar=best[1]; }
+  if(best){ A.credVar=best[0]; B.credVar=best[1]; A.awardVar=best[2]; B.awardVar=best[3]; }
   return bestDiff;
 }
 /* 長度匹配組：兩卡等長（子句數相等 + 字長差≤8，必要時用證照版本微調）→ 估純內容 part-worth。 */
 function makePairMatched(){
   let A,B,guard=0;
   do{
-    A=randProfile(); B=randProfile(); A.credVar=null; B.credVar=null; guard++;
+    A=randProfile(); B=randProfile(); A.credVar=null; B.credVar=null; A.awardVar=null; B.awardVar=null; guard++;
     if(identical(A,B) || diffCount(A,B)<MIN_DIFF || !strengthWins(A,B) || !strengthWins(B,A) || visibleClauses(A)!==visibleClauses(B)) continue;
     tuneCredLen(A,B);                                       // 證照版本微調縮小長度差
     if(Math.abs(bodyLen(A)-bodyLen(B))<=8) break;           // 微調後仍須 ≤8
   } while(guard<15000);
   return Math.random()<.5 ? [A,B] : [B,A];
 }
-/* 長度不限組：不約束長度/子句數 → 故意製造長短差，捕捉「長>短(揭露多寡)」效果。
- * 仍要求：非 identical、diff≥MIN_DIFF、互有勝負（避免 dominated），但允許子句數/字長差很大。
- * 額外保證『有長度差』：兩卡子句數須不同（否則跟匹配組無異）。 */
+/* 長度不限組：捕捉「長>短(揭露多寡)」效果，但長短差不可過大（使用者 2026-07-17）。
+ * 仍要求：非 identical、diff≥MIN_DIFF、互有勝負（避免 dominated）。
+ * 長度差約束：子句數差恰為 1（保證有差但不誇張）+ 字數差 ≤ MAX_FREE_LEN_DIFF
+ * （原無上限時字數差平均 10.7、最大 30，過大會使長卡明顯「看起來資歷豐富」而蓋過屬性效果）。 */
+const MAX_FREE_LEN_DIFF = 12;
 function makePairFree(){
   let A,B,guard=0;
-  do{ A=randProfile(); B=randProfile(); guard++; }
+  do{ A=randProfile(); B=randProfile(); A.credVar=null; B.credVar=null; A.awardVar=null; B.awardVar=null; guard++; }
   while(guard<15000 && (
     identical(A,B) ||
     diffCount(A,B) < MIN_DIFF ||
     !strengthWins(A,B) || !strengthWins(B,A) ||
-    visibleClauses(A) === visibleClauses(B)                // 子句數須不同 → 保證有長度差
+    Math.abs(visibleClauses(A)-visibleClauses(B)) !== 1 ||   // 子句數差恰 1 → 有長度差但不誇張
+    Math.abs(bodyLen(A)-bodyLen(B)) > MAX_FREE_LEN_DIFF      // 字數差上限
   ));
   return Math.random()<.5 ? [A,B] : [B,A];
 }
@@ -379,8 +395,8 @@ function showItem(){
     $('#trial-counter').textContent = t.title;
   }
   // 渲染敘述句：姓名粗體 + 學歷塊與 solo 子句依 chunkOrder 排序
-  $('#by-L').innerHTML = `<span class="byname">${item.nameA}</span>` + buildSentenceBody(item.A, STATE.chunkOrder, item.A.credVar);
-  $('#by-R').innerHTML = `<span class="byname">${item.nameB}</span>` + buildSentenceBody(item.B, STATE.chunkOrder, item.B.credVar);
+  $('#by-L').innerHTML = `<span class="byname">${item.nameA}</span>` + buildSentenceBody(item.A, STATE.chunkOrder, item.A.credVar, item.A.awardVar);
+  $('#by-R').innerHTML = `<span class="byname">${item.nameB}</span>` + buildSentenceBody(item.B, STATE.chunkOrder, item.B.credVar, item.B.awardVar);
   $('#opt-L').classList.remove('sel'); $('#opt-R').classList.remove('sel');
   $('#btn-trial-next').disabled = true;
   if(STATE.gateTimer){ clearInterval(STATE.gateTimer); STATE.gateTimer=null; }
@@ -434,7 +450,13 @@ $('#btn-trial-next').onclick=()=>{
     c.consistent=consistent;
     STATE.repeats.push({ task:c.task, ofTrial:c.ofTrial, origName:orig?origChosenName(orig):null, againName:chosenName, side:c.chosenSide, consistent, rtMs, t:now });
   } else {
-    STATE.responses.push({ kind:'trial', task:c.task, trial:c.trial, lenGroup:c.lenGroup, A:c.A, B:c.B, nameA:c.nameA, nameB:c.nameB, side:c.chosenSide, chosenName, outlet:outletKey, rtMs, t:now });
+    // credVar/awardVar：措辭長度版本索引（0=最長…）。存檔供「措辭變體是否影響選擇」事後檢定
+    // （使用者 2026-07-17：優先保長度等長、變體影響改事後檢定；版本不進設計矩陣但須可稽核）。
+    STATE.responses.push({ kind:'trial', task:c.task, trial:c.trial, lenGroup:c.lenGroup, A:c.A, B:c.B,
+      nameA:c.nameA, nameB:c.nameB, side:c.chosenSide, chosenName, outlet:outletKey, rtMs, t:now,
+      credVarA:c.A.credVar, credVarB:c.B.credVar, awardVarA:c.A.awardVar, awardVarB:c.B.awardVar,
+      bodyLenA:buildSentenceBody(c.A, STATE.chunkOrder, c.A.credVar, c.A.awardVar).length,
+      bodyLenB:buildSentenceBody(c.B, STATE.chunkOrder, c.B.credVar, c.B.awardVar).length });
   }
   STATE.seqIdx++;
   if(STATE.seqIdx<STATE.seq.length){ gotoCurrentOrTaskIntro(); return; }
@@ -532,10 +554,15 @@ function flatten(data){
     ua:data.ua||'',
   };
   // 每題：<task>_t{n}_<attr>A/B + 媒體 + 選擇（task ∈ read/wary）
+  // 另存措辭版本(credVar/awardVar)與實際字長(bodyLen)供「措辭變體/長度是否影響選擇」事後檢定。
   data.responses.filter(r=>r.kind==='trial').forEach(r=>{
     const b=r.task+'_t'+(r.trial+1);
     ATTR_KEYS.forEach(k=>{ flat[b+'_'+k+'A']=r.A[k]; flat[b+'_'+k+'B']=r.B[k]; });
     flat[b+'_lenGroup']=r.lenGroup||''; flat[b+'_outlet']=r.outlet; flat[b+'_side']=r.side; flat[b+'_chosen']=r.chosenName; flat[b+'_rtMs']=r.rtMs;
+    // 措辭變體事後檢定用欄位（null → 空字串，避免 Sheet 吞值）
+    flat[b+'_credVarA']=r.credVarA==null?'':r.credVarA; flat[b+'_credVarB']=r.credVarB==null?'':r.credVarB;
+    flat[b+'_awardVarA']=r.awardVarA==null?'':r.awardVarA; flat[b+'_awardVarB']=r.awardVarB==null?'':r.awardVarB;
+    flat[b+'_bodyLenA']=r.bodyLenA; flat[b+'_bodyLenB']=r.bodyLenB;
   });
   // dominance（各任務一題）
   data.responses.filter(r=>r.kind==='dominance').forEach(dom=>{
