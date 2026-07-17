@@ -48,6 +48,9 @@
   .trial-topline .progress{flex:1 1 auto}
   .prompt{font-family:var(--serif);font-size:19px;font-weight:700;text-align:center;margin:6px 0 2px;line-height:1.45}
   .prompt.trap{color:var(--accent);animation:flash 1s linear infinite}
+  /* 情境錨點（媒體名／新聞類型）：實驗操弄的關鍵情境詞，需讓受訪者確實注意到。
+     用酒紅字＋淡底標示，克制不搶戲、與 trap 的閃爍紅區隔（此處不閃、不加框）。 */
+  .ctx{color:var(--accent);background:rgba(138,31,31,.07);padding:1px 5px;border-radius:2px;white-space:nowrap}
   @keyframes flash{0%,100%{opacity:1}50%{opacity:.4}}
   .trial-body{display:flex;flex-direction:column;gap:16px}
   .nextrow{display:flex;justify-content:center}
@@ -105,7 +108,7 @@
 <!-- 1. 研究說明（正式版首頁） -->
 <section id="screen-intro" class="panel">
   <div class="masthead">記者署名研究</div>
-  <p>接下來請想像你正在網路上閱讀一則財經新聞，在報導的標題與內文中間你會看到記者的署名與簡介。</p>
+  <p>接下來請想像你正在網路上閱讀一則<span class="ctx">財經新聞</span>，在報導的標題與內文中間你會看到記者的署名與簡介。</p>
   <p>本研究分兩部分，每題<b>上下呈現</b>兩位虛構的記者資歷簡介，請依你的<b>第一直覺</b>作答最適合的，沒有對錯，整個研究只要大約 4 分鐘。</p>
   <p class="small">本研究使用虛構記者，姓名與資歷組合皆為隨機產生，與真實人物無關；作答匿名，不收集個人姓名與聯絡方式，僅供學術研究，分析時也不會以個人為分析單位。您可以隨時退出。</p>
   <button class="btn" id="btn-intro-next">我同意開始研究</button>

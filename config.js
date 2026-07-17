@@ -204,22 +204,48 @@ const SCALE_NEWSTRUST = {
   ],
 };
 
-/* 構面 2：是否會看報導者資格（核心 moderator）— 2 題，問受訪者平常的閱讀習慣。 */
+/* 構面 2：是否在意記者資格（核心 moderator）— 4 題（2026-07-17 由 2 題補足）。
+ * 【構念窄化】原 2 題橫跨「注意（attention：會不會看記者是誰）」與「使用（use/weighting：
+ * 會不會拿記者資歷當判斷依據）」兩個子面向，item 間共變低是 α 不穩主因。
+ * 本版**窄化為「使用／賦權」單一面向**——即「記者是誰／什麼資歷，會不會影響我對這則新聞的判斷」，
+ * 理論上最貼近 conjoint 的選擇行為，最適合當預測 part-worth 差異的 moderator。
+ * 【wiki 無現成量表故自建】source/author attention 在文獻中僅以行為指標（Edgerly & Vraga 2019 來源辨識檢核）、
+ * 開放式提及率（Bobkowski 2020：author 為第二高可信度線索 84%）、質性訪談（Tully et al. 2020）出現，
+ * 未見自陳傾向量表 → 本構面題項為自建，pilot 須測信度。
+ * 【設 moderator 的理論依據】Edgerly & Vraga (2019) 發現近四成受試者未察覺來源線索、並以來源辨識檢核
+ * 篩除 127 人 → 直接證明「是否注意/使用來源資訊」存在個體差異且會稀釋效果。
+ * 【全部同向，不加反向題】Meyer (1988) 極性實驗證實反向措辭會製造方法假象因子、破壞 α。
+ * 【避免污染】題目聚焦「傾向／重要性」而非「查證行為頻率」——Prajod (2026) 顯示 source-checking
+ * 主要由主題興趣驅動，寫成查證行為會混入主題興趣變異。 */
 const SCALE_CREDLOOK = {
   group: 'credlook', dim: '是否在意記者資格', scale: LIKERT5, prefix: 'q_cred_',
-  intro: '以下是你平常閱讀新聞的習慣，請依實際情況作答。',
+  intro: '以下是你平常閱讀新聞的看法，請依實際情況作答。',
   items: [
-    { id: 'notice', q: '我讀新聞時，會在意撰稿記者是誰、有什麼背景。' },
-    { id: 'use',    q: '我會參考記者的資歷（學歷、得獎、經驗）來判斷一則新聞可不可信。' },
+    { id: 'use',     q: '我會參考記者的資歷（學歷、得獎、經驗）來判斷一則新聞可不可信。' },
+    { id: 'affect',  q: '同樣一則新聞，記者是誰會影響我對它的信任程度。' },
+    { id: 'matter',  q: '新聞是誰寫的，對我來說是重要的資訊。' },
+    { id: 'weigh',   q: '記者的專業背景，是我判斷新聞品質時會納入考量的因素。' },
   ],
 };
 
-/* 對指派媒體的既有信任（between-subject 控制：受訪者整份固定一家）：該家 1 題。{OUTLET} 動態替換。 */
+/* 對指派媒體的既有信任（between-subject 控制：受訪者整份固定一家）— 4 題（2026-07-17 由 1 題補足）。
+ * 【量表來源】改寫自 Meyer (1988) Believability Index 五題（Journalism Quarterly 65: 567-574）：
+ *   Can be trusted / Accurate / Fair / Unbiased / Tells the whole story。
+ *   本版取前四題（alpha-if-deleted 全落 .78-.80，無冗題；省「全貌」題控題數）。
+ * 【信度背書】Meyer 原研究 α=.83-.84；West (1994) 交叉驗證 α=.92；
+ *   McComas & Trumbo (2001) 將主詞替換為非媒體來源仍 α=.84 → 主詞換成特定媒體有實證先例；
+ *   Edgerly & Vraga (2019) 以近乎同一組題測「特定帳號」α=.87。
+ * 【改寫說明】原為語意差異雙極量尺，此處改寫為 Likert 陳述句（論文須註明 adapted from Meyer 1988）。
+ * 【全部同向，不加反向題】Meyer 極性實驗證實 Gaziano-McGrath 的「單因子」實為反向措辭造成的方法假象。
+ * {OUTLET} 動態替換為受訪者被分派的那一家。 */
 const SCALE_OUTLET = {
   group: 'outlet', dim: '對該媒體既有信任', scale: LIKERT5, prefix: 'q_outlet_',
   intro: '最後，關於你這次看到的這家媒體：',
   items: [
-    { id: 'cred',  q: '整體而言，{OUTLET} 是可信的媒體。' },
+    { id: 'cred',     q: '整體而言，<span class="ctx">{OUTLET}</span>是可信的媒體。' },        // Can be trusted
+    { id: 'accurate', q: '<span class="ctx">{OUTLET}</span>的報導內容是準確的。' },            // Accurate
+    { id: 'fair',     q: '<span class="ctx">{OUTLET}</span>的報導是公正的。' },                // Fair
+    { id: 'unbiased', q: '<span class="ctx">{OUTLET}</span>的報導不帶偏見。' },                // Unbiased
   ],
 };
 
@@ -241,16 +267,18 @@ const DEMOG = [
  *   DV2 wary  → trustworthiness（誠信可信，品格面）
  * task key 沿用 'read'/'wary' 不變動，避免 flatten 欄位連鎖更名。 */
 const TASKS = {
+  /* 情境錨點（媒體名／新聞類型）以 <span class="ctx"> 標示（使用者 2026-07-17）：
+   * 這兩個是實驗操弄的關鍵情境（between-subject 媒體 × 鎖定財經情境），需確保受訪者注意到。 */
   read: {
     key: 'read', dv: 'expertise', label: '更專業',
     title: '專業可信（expertise）',
-    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者<b>看起來更專業</b>？',
+    prompt: '當你在<span class="ctx">{OUTLET}</span>看到一則<span class="ctx">財經新聞</span>報導時，你覺得哪一位記者<b>看起來更專業</b>？',
     intro: '接下來，每題上下呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>看起來更專業</b>的那一位。沒有對錯。',
   },
   wary: {
     key: 'wary', dv: 'trustworthiness', label: '更可信',
     title: '誠信可信（trustworthiness）',
-    prompt: '當你在{OUTLET}看到一則財經新聞報導時，你覺得哪一位記者的<b>報導更可信</b>？',
+    prompt: '當你在<span class="ctx">{OUTLET}</span>看到一則<span class="ctx">財經新聞</span>報導時，你覺得哪一位記者的<b>報導更可信</b>？',
     intro: '接下來，每題上下呈現兩位記者的簡介。請依第一直覺，選出你覺得<b>報導更可信</b>的那一位。沒有對錯。',
   },
 };
