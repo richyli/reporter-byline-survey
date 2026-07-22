@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>財經記者簡介 — 排序小測</title>
+<style>
+  :root{ --bg:#f6f7f9; --card:#fff; --ink:#1f2733; --sub:#5b6672; --line:#e2e6eb;
+         --accent:#2f6db3; --accentink:#fff; --good:#2e7d5b; --warn:#b3532f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+       line-height:1.7;-webkit-text-size-adjust:100%}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 64px}
+  h1{font-size:1.35rem;margin:.2em 0 .4em}
+  h2{font-size:1.1rem;margin:.2em 0}
+  p{margin:.5em 0}
+  .sub{color:var(--sub);font-size:.92rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:18px 16px;margin:14px 0;box-shadow:0 1px 3px rgba(20,30,50,.04)}
+  .prompt{font-size:1.08rem;font-weight:600;margin:.2em 0 .1em}
+  .crit{display:inline-block;background:#eef4fb;color:var(--accent);border-radius:999px;
+        padding:2px 12px;font-size:.85rem;font-weight:600;margin-bottom:8px}
+  .hint{color:var(--sub);font-size:.86rem;margin:.1em 0 .7em}
+  /* ranking list */
+  ol.rank{list-style:none;margin:8px 0 0;padding:0}
+  ol.rank li{display:flex;align-items:center;gap:10px;background:#fbfcfe;
+     border:1px solid var(--line);border-radius:11px;padding:12px 12px;margin:8px 0;
+     cursor:grab;user-select:none;transition:box-shadow .12s,transform .06s}
+  ol.rank li.dragging{opacity:.5;box-shadow:0 6px 18px rgba(20,30,50,.16)}
+  ol.rank li.over{border-color:var(--accent);box-shadow:0 0 0 2px #d5e5f6 inset}
+  .pos{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+       font-size:.82rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .lbl{flex:1;font-size:1.02rem}
+  .grip{color:#aab3bf;font-size:1.2rem;letter-spacing:-2px}
+  .mv{display:flex;flex-direction:column;gap:2px}
+  .mv button{width:30px;height:22px;border:1px solid var(--line);background:#fff;border-radius:6px;
+     font-size:.8rem;line-height:1;cursor:pointer;color:var(--sub)}
+  .mv button:active{background:#eef4fb}
+  .mv button:disabled{opacity:.3;cursor:default}
+  .ends{display:flex;justify-content:space-between;color:var(--sub);font-size:.8rem;margin-top:6px}
+  /* controls */
+  button.nav{background:var(--accent);color:var(--accentink);border:0;border-radius:11px;
+     padding:13px 22px;font-size:1.02rem;font-weight:600;cursor:pointer;margin-top:6px}
+  button.nav:disabled{opacity:.45;cursor:default}
+  button.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .opt{display:block;border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin:7px 0;
+       background:#fff;cursor:pointer}
+  .opt:has(input:checked){border-color:var(--accent);background:#eef4fb}
+  .opt input{margin-right:8px}
+  input[type=text],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;
+     padding:10px 12px;font:inherit;background:#fff;color:var(--ink)}
+  textarea{min-height:64px;resize:vertical}
+  .likert{display:flex;gap:6px;justify-content:space-between;margin-top:8px}
+  .likert label{flex:1;text-align:center;border:1px solid var(--line);border-radius:9px;padding:9px 2px;
+     cursor:pointer;font-size:.9rem;background:#fff}
+  .likert label:has(input:checked){border-color:var(--accent);background:#eef4fb;font-weight:600}
+  .likert input{display:none}
+  .likert .end{font-size:.78rem;color:var(--sub)}
+  .prog{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin:2px 0 14px}
+  .prog>i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+  .pill{display:inline-block;background:#eef4fb;color:var(--accent);border-radius:999px;
+        padding:1px 10px;font-size:.8rem;font-weight:600}
+  .req{color:var(--warn);font-size:.84rem;margin-top:6px;min-height:1.1em}
+  .done{text-align:center;padding:20px 0}
+  .big{font-size:2.2rem}
+  code{background:#eef1f5;border-radius:5px;padding:1px 6px;font-size:.86em}
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#12161c;--card:#1b212a;--ink:#e7ecf2;--sub:#9aa5b1;--line:#2b333e;
+          --accent:#5aa0e6;--accentink:#0d1117}
+    ol.rank li{background:#212936}.opt,.likert label,input,textarea,select,.mv button{background:#212936}
+    .crit,.pill,.opt:has(input:checked),.likert label:has(input:checked){background:#22303f}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="prog"><i id="bar"></i></div>
+  <div id="app"></div>
+</div>
+
+<script>
+/* =========================================================================
+   財經記者 byline — 認知前測 · 排序實驗
+   對應 study2_conjoint/cognitive_pretest_protocol.md 與 variable_definition_table.md
+   驗：award 國內/國外排序、cred 專業↑/誠信↓ 分裂、rank 位階、school warranting
+   資料：POST JSON → SheetMonkey（端點留白預設走本機下載，勿用正式問卷 form）
+   ========================================================================= */
+
+/* 前測專屬 SheetMonkey form（與正式問卷 8utm... 不同支，資料不混）。
+   留空字串則改走本機 JSON 下載（當面施測用）。 */
+const ENDPOINT = 'https://api.sheetmonkey.io/form/etpEsNyS39x1GY9PA7HSrg';
+
+const CARDS = {
+  award: [ {k:'foreign', t:'曾獲國外新聞獎'}, {k:'domestic', t:'曾獲國內新聞獎'}, {k:'none', t:'（未提得獎）'} ],
+  cred:  [ {k:'analyst', t:'具證券投資分析師資格'}, {k:'broker', t:'具證券高級業務員資格'}, {k:'none', t:'（無證照）'} ],
+  rank:  [ {k:'senior', t:'資深記者'}, {k:'reporter', t:'記者'}, {k:'none', t:'（未提職級）'} ],
+  school:[ {k:'natl', t:'國立大學畢業'}, {k:'priv', t:'私立大學畢業'}, {k:'none', t:'（未提學校）'} ],
+};
+
+// 每個排序任務：兩準則各排一次，暴露 expertise↔trustworthiness 分歧
+const RANK_TASKS = [
+  {id:'award_exp',  attr:'award',  crit:'expertise',      prompt:'哪一位記者你覺得<b>更懂財經、報導更專業</b>？', critLabel:'專業 · expertise'},
+  {id:'award_tru',  attr:'award',  crit:'trustworthiness',prompt:'哪一位記者你覺得<b>報導更誠實、不會誤導你</b>？', critLabel:'誠信 · trustworthiness'},
+  {id:'cred_exp',   attr:'cred',   crit:'expertise',      prompt:'哪一位記者你覺得<b>更懂財經、報導更專業</b>？', critLabel:'專業 · expertise'},
+  {id:'cred_tru',   attr:'cred',   crit:'trustworthiness',prompt:'哪一位記者你覺得<b>報導更誠實、不會被業者/市場影響</b>？', critLabel:'誠信 · trustworthiness'},
+  {id:'rank_exp',   attr:'rank',   crit:'expertise',      prompt:'哪一位記者你覺得<b>更資深、更專業</b>？', critLabel:'專業 · expertise'},
+  {id:'rank_tru',   attr:'rank',   crit:'trustworthiness',prompt:'哪一位記者你覺得<b>報導更誠實可信</b>？', critLabel:'誠信 · trustworthiness'},
+  {id:'school_tru', attr:'school', crit:'trustworthiness',prompt:'整體而言，哪一位記者寫的財經新聞你<b>比較信任</b>？', critLabel:'整體信任'},
+];
+
+const PROBES = [
+  {id:'award_recall', type:'text', q:'「曾獲<b>國外新聞獎</b>」——你會想到哪一個獎？（想不到可留空）',
+   ph:'例如某某獎…（不確定就留空）'},
+  {id:'cred_hard', type:'radio', q:'「證券投資<b>分析師</b>」和「證券<b>高級業務員</b>」，你覺得哪一個<b>比較難考、比較厲害</b>？',
+   opts:[['analyst','證券投資分析師'],['broker','證券高級業務員'],['dk','不知道／差不多']]},
+  {id:'cred_valence', type:'radio', q:'看到一則財經新聞的記者「<b>具證券投資分析師資格</b>」，你第一個感覺比較接近哪個？',
+   opts:[['trust','更懂財經、更可信'],['conflict','會擔心他跟業界太近、可能推銷或有利益考量'],['same','沒什麼差']]},
+  {id:'cred_vs_beat', type:'radio', q:'「具證券分析師<b>資格</b>」和「主跑<b>證券線</b>」——這兩句給你的感覺一樣嗎？',
+   opts:[['same','差不多，都是懂財經'],['diff','不一樣'],['dk','說不上來']]},
+  {id:'cred_vs_beat_why', type:'text', q:'（若不一樣）差在哪？', ph:'一兩句話即可，可留空', optional:true},
+  {id:'rank_care', type:'likert', q:'署名寫「<b>資深記者</b>」會不會影響你對這篇財經報導的看法？',
+   ends:['完全不會/不會注意','很會影響']},
+  {id:'rank_vs_tenure', type:'radio', q:'「<b>資深記者</b>」和「有<b>20 年</b>採訪經驗」——感覺一樣嗎？',
+   opts:[['same','差不多'],['diff','不一樣'],['dk','說不上來']]},
+  {id:'ana', type:'check', q:'剛剛判斷時，你<b>主要看</b>哪幾項？（可複選；沒在看的別勾）',
+   opts:[['school','學校'],['degree','學位'],['tenure','年資'],['rank','職級'],['cred','證照'],['beat','跑的路線'],['award','得獎']]},
+  {id:'weird', type:'text', q:'有沒有哪一句你<b>看不太懂</b>、或覺得<b>怪怪的／不像真的記者</b>？',
+   ph:'可留空', optional:true},
+];
+
+/* ---------- state ---------- */
+const now = ()=>Date.now();
+const STATE = { pid:'p'+now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+                start:now(), demo:{}, ranks:{}, probes:{}, order:[] };
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+STATE.order = shuffle(RANK_TASKS.map(t=>t.id));   // 任務順序隨機
+
+const app = document.getElementById('app');
+const bar = document.getElementById('bar');
+let step = -2;                 // -2 intro, -1 demo, 0..n-1 rank tasks, then probes(one screen), then done
+const TOTAL = STATE.order.length + 2;   // +demo +probes (progress rough)
+
+function setProg(i){ bar.style.width = Math.max(0,Math.min(100, (i)/(TOTAL)*100)) + '%'; }
+
+/* ---------- screens ---------- */
+function intro(){
+  setProg(0);
+  app.innerHTML = `
+    <h1>財經記者簡介 · 排序小測</h1>
+    <p class="sub">大約 5–7 分鐘。沒有對錯，只想知道你「怎麼讀」這些記者資歷。</p>
+    <div class="card">
+      <p>接下來會給你幾組<b>記者簡介的小標籤</b>，請你依題目把它們<b>由上到下排序</b>
+      （最符合的放最上面）。可以<b>拖曳</b>，也可以用右邊的 <b>▲▼</b> 按鈕移動。</p>
+      <p>請想像情境：你在看一則<b>財經新聞</b>，正在判斷署名的這位記者。</p>
+    </div>
+    <button class="nav" id="go">開始</button>`;
+  document.getElementById('go').onclick = ()=>{ step=-1; demo(); };
+}
+
+function demo(){
+  setProg(1);
+  app.innerHTML = `
+    <span class="pill">基本資料</span>
+    <div class="card">
+      <p class="prompt">性別</p>
+      <div id="d_sex">
+        ${['女','男','其他/不願答'].map((v,i)=>`<label class="opt"><input type="radio" name="sex" value="${v}">${v}</label>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <p class="prompt">年齡</p>
+      <select id="d_age">
+        <option value="">請選擇</option>
+        ${['18–24','25–34','35–44','45–54','55+'].map(v=>`<option value="${v}">${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="card">
+      <p class="prompt">你目前（或曾）從事<b>新聞、財經或金融</b>相關工作嗎？</p>
+      <div id="d_pro">
+        ${[['no','沒有'],['yes','有']].map(o=>`<label class="opt"><input type="radio" name="pro" value="${o[0]}">${o[1]}</label>`).join('')}
+      </div>
+      <p class="hint">（只是分流用；一般讀者最貼近本研究對象）</p>
+    </div>
+    <div class="req" id="rq"></div>
+    <button class="nav" id="go">下一步</button>`;
+  document.getElementById('go').onclick = ()=>{
+    const sex=(document.querySelector('input[name=sex]:checked')||{}).value;
+    const age=document.getElementById('d_age').value;
+    const pro=(document.querySelector('input[name=pro]:checked')||{}).value;
+    if(!sex||!age||!pro){ document.getElementById('rq').textContent='請完成上面三題再繼續。'; return; }
+    STATE.demo={sex,age,pro}; step=0; renderRank();
+  };
+}
+
+function renderRank(){
+  const tid = STATE.order[step];
+  const task = RANK_TASKS.find(t=>t.id===tid);
+  setProg(2+step);
+  const init = shuffle(CARDS[task.attr]);          // 初始順序隨機，避免起始位置偏誤
+  STATE.ranks[tid] = { shown:now(), attr:task.attr, crit:task.crit, initial:init.map(c=>c.k) };
+  app.innerHTML = `
+    <span class="pill">排序 ${step+1} / ${STATE.order.length}</span>
+    <div class="card">
+      <span class="crit">${task.critLabel}</span>
+      <p class="prompt">${task.prompt}</p>
+      <p class="hint">最符合的放<b>最上面</b>。可拖曳，或用 ▲▼ 移動。</p>
+      <ol class="rank" id="list"></ol>
+      <div class="ends"><span>↑ 最符合</span><span>最不符合 ↓</span></div>
+    </div>
+    <button class="nav" id="go">${step===STATE.order.length-1?'進入最後幾題':'下一組'}</button>`;
+  buildList(document.getElementById('list'), init);
+  document.getElementById('go').onclick = ()=>{
+    const order = [...document.querySelectorAll('#list li')].map(li=>li.dataset.k);
+    STATE.ranks[tid].order = order;
+    STATE.ranks[tid].rtMs = now()-STATE.ranks[tid].shown;
+    step++;
+    if(step<STATE.order.length) renderRank(); else renderProbes();
+  };
+}
+
+function buildList(ol, cards){
+  cards.forEach(c=>{
+    const li=document.createElement('li');
+    li.draggable=true; li.dataset.k=c.k;
+    li.innerHTML=`<span class="pos"></span><span class="grip">⋮⋮</span>
+      <span class="lbl">${c.t}</span>
+      <span class="mv"><button class="up" aria-label="上移">▲</button>
+      <button class="dn" aria-label="下移">▼</button></span>`;
+    ol.appendChild(li);
+  });
+  renumber(ol);
+  // ▲▼
+  ol.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const li=b.closest('li');
+    if(b.classList.contains('up') && li.previousElementSibling) ol.insertBefore(li, li.previousElementSibling);
+    if(b.classList.contains('dn') && li.nextElementSibling) ol.insertBefore(li.nextElementSibling, li);
+    renumber(ol);
+  });
+  // drag (desktop / pointer)
+  let dragEl=null;
+  ol.addEventListener('dragstart', e=>{ dragEl=e.target.closest('li'); dragEl.classList.add('dragging'); });
+  ol.addEventListener('dragend', ()=>{ if(dragEl){dragEl.classList.remove('dragging');dragEl=null;} ol.querySelectorAll('li').forEach(l=>l.classList.remove('over')); renumber(ol); });
+  ol.addEventListener('dragover', e=>{ e.preventDefault();
+    const li=e.target.closest('li'); if(!li||li===dragEl) return;
+    ol.querySelectorAll('li').forEach(l=>l.classList.remove('over')); li.classList.add('over');
+    const r=li.getBoundingClientRect(); const after=(e.clientY-r.top)/r.height>0.5;
+    ol.insertBefore(dragEl, after?li.nextElementSibling:li);
+  });
+}
+function renumber(ol){ [...ol.children].forEach((li,i)=>{
+  li.querySelector('.pos').textContent=i+1;
+  li.querySelector('.up').disabled = i===0;
+  li.querySelector('.dn').disabled = i===ol.children.length-1;
+}); }
+
+function renderProbes(){
+  setProg(TOTAL-0.5);
+  const html = PROBES.map(p=>{
+    let body='';
+    if(p.type==='text') body=`<input type="text" id="pb_${p.id}" placeholder="${p.ph||''}">`;
+    if(p.type==='radio') body=p.opts.map(o=>`<label class="opt"><input type="radio" name="pb_${p.id}" value="${o[0]}">${o[1]}</label>`).join('');
+    if(p.type==='check') body=p.opts.map(o=>`<label class="opt"><input type="checkbox" name="pb_${p.id}" value="${o[0]}">${o[1]}</label>`).join('');
+    if(p.type==='likert'){ body=`<div class="likert">
+      <span class="end">${p.ends[0]}</span>
+      ${[1,2,3,4,5].map(n=>`<label><input type="radio" name="pb_${p.id}" value="${n}">${n}</label>`).join('')}
+      <span class="end">${p.ends[1]}</span></div>`; }
+    return `<div class="card" data-pid="${p.id}" data-optional="${p.optional?1:0}" data-type="${p.type}">
+      <p class="prompt">${p.q}</p>${body}</div>`;
+  }).join('');
+  app.innerHTML = `<span class="pill">最後幾題</span>${html}
+    <div class="req" id="rq"></div>
+    <button class="nav" id="go">送出</button>`;
+  document.getElementById('go').onclick = submit;
+}
+
+function collectProbes(){
+  const miss=[];
+  document.querySelectorAll('#app .card[data-pid]').forEach(c=>{
+    const id=c.dataset.pid, type=c.dataset.type, optional=c.dataset.optional==='1';
+    let val;
+    if(type==='text') val=(c.querySelector('input').value||'').trim();
+    else if(type==='check') val=[...c.querySelectorAll('input:checked')].map(i=>i.value);
+    else val=(c.querySelector('input:checked')||{}).value||'';
+    STATE.probes[id]=val;
+    const empty = type==='check' ? val.length===0 : !val;
+    if(empty && !optional) miss.push(id);
+  });
+  return miss;
+}
+
+function flatten(){
+  const f={ pid:STATE.pid, ts:new Date(STATE.start).toISOString(),
+            totalMs:now()-STATE.start, ua:navigator.userAgent,
+            sex:STATE.demo.sex, age:STATE.demo.age, pro:STATE.demo.pro,
+            taskOrder:STATE.order.join('>') };
+  // rankings：記錄名次字串 + 各卡名次 + rt
+  Object.entries(STATE.ranks).forEach(([id,r])=>{
+    f['rank_'+id]=(r.order||[]).join('>');
+    f['init_'+id]=(r.initial||[]).join('>');
+    f['rt_'+id+'_ms']=r.rtMs||'';
+    (r.order||[]).forEach((k,i)=>{ f['pos_'+id+'_'+k]=i+1; });  // 1=最符合
+  });
+  // probes
+  Object.entries(STATE.probes).forEach(([id,v])=>{
+    f['pb_'+id]=Array.isArray(v)?v.join('|'):v;
+  });
+  return f;
+}
+
+function submit(){
+  const miss=collectProbes();
+  if(miss.length){ document.getElementById('rq').textContent='還有必答題沒填（標示題目）。可留空的已註明。';
+    const el=document.querySelector(`[data-pid="${miss[0]}"]`); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  const flat=flatten();
+  if(ENDPOINT){
+    // 線上收案：送 SheetMonkey（沿用正式問卷同機制，fire-and-forget）
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(flat)}).catch(()=>{});
+  } else {
+    // 當面施測：本機產生 JSON 讓施測者收檔
+    try{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([JSON.stringify(flat,null,2)],{type:'application/json'}));
+      a.download='pretest_'+STATE.pid+'.json'; document.body.appendChild(a); a.click(); a.remove();
+    }catch(e){}
+  }
+  done();
+}
+
+function done(){
+  setProg(TOTAL);
+  app.innerHTML = `<div class="done">
+    <div class="big">✓</div>
+    <h1>完成，謝謝你！</h1>
+    <p class="sub">${ENDPOINT?'你的回答已送出，感謝參與。':'已在本機產生一份 <code>pretest_'+STATE.pid+'.json</code>，請交給施測者。'}</p>
+  </div>`;
+}
+
+intro();
+</script>
+</body>
+</html>
